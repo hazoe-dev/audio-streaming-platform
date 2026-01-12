@@ -3,8 +3,6 @@
 A backend-focused audio streaming platform inspired by Fonos/Audible.
 This project is designed primarily for backend system design and interview demonstration.
 
----
-
 ## 🎯 Project Goals
 
 - Focus on backend architecture and business logic
@@ -12,8 +10,6 @@ This project is designed primarily for backend system design and interview demon
 - Resume listening functionality
 - Clear separation of responsibilities (modular monolith)
 - Interview-ready documentation and design
-
----
 
 ## ❌ Non-goals (Out of Scope)
 
@@ -23,8 +19,6 @@ This project is designed primarily for backend system design and interview demon
 - Recommendation system
 - Microservice implementation (future consideration only)
 
----
-
 ## 🧩 Core Features
 
 - User authentication (JWT)
@@ -33,8 +27,6 @@ This project is designed primarily for backend system design and interview demon
 - Resume listening progress
 - User library
 - Full-text search
-
----
 
 ## 📐 System Architecture
 
@@ -54,8 +46,6 @@ PostgreSQL
 
 ```
 
----
-
 ## 🧠 Domain Model (ERD)
 
 ```mermaid
@@ -65,8 +55,6 @@ erDiagram
     USER ||--o{ LISTENING_PROGRESS : tracks
     AUDIO ||--o{ LISTENING_PROGRESS : updates
 ```
-
----
 
 ## 🗄️ Database Schema
 
@@ -102,8 +90,6 @@ erDiagram
 - last_position_seconds
 - updated_at
 - UNIQUE(user_id, audio_id)
-
----
 
 ## 🧪 Initial SQL Schema (Flyway V1)
 
@@ -146,8 +132,6 @@ CREATE TABLE listening_progress (
 );
 ````
 
----
-
 ## 🔌 API Contract (Frozen Scope)
 
 ### Authentication
@@ -158,8 +142,6 @@ POST /api/auth/login
 POST /api/auth/refresh
 ```
 
----
-
 ### Audio
 
 ```
@@ -168,8 +150,6 @@ GET /api/audios/{id}
 GET /api/audios/{id}/stream
 ```
 
----
-
 ### Library
 
 ```
@@ -177,8 +157,6 @@ POST   /api/library/{audioId}
 DELETE /api/library/{audioId}
 GET    /api/library
 ```
-
----
 
 ### Listening Progress
 
@@ -196,15 +174,11 @@ Request body:
 }
 ```
 
----
-
 ### Search
 
 ```
 GET /api/search?keyword=sony
 ```
-
----
 
 ## 🚀 Future Improvements
 
@@ -212,8 +186,6 @@ GET /api/search?keyword=sony
 * Add caching for audio metadata
 * Event-driven progress tracking
 * CI/CD pipeline
-
----
 
 ## 📅 Development Plan
 
