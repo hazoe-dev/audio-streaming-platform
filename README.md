@@ -1,13 +1,3 @@
-
-
-```
-✔ ERD (domain model)
-✔ DB schema (SQL)
-✔ API contract (đóng băng scope)
-```
----
-
-
 # 🎧 Audio Streaming Platform (Fonos-like Backend)
 
 A backend-focused audio streaming platform inspired by Fonos/Audible.
