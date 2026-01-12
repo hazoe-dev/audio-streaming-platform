@@ -46,6 +46,47 @@ PostgreSQL
 
 ```
 
+## 📦 Package Structure
+This project follows a modular monolith architecture.
+Each module represents a bounded context.
+
+```text
+dev.hazoe.audiostreaming
+├── auth
+│   ├── AuthController.java
+│   ├── AuthService.java
+│   └── JwtProvider.java
+├── audio
+│   ├── AudioController.java
+│   ├── AudioService.java
+│   └── StreamingService.java
+├── library
+│   ├── LibraryController.java
+│   └── LibraryService.java
+├── progress
+│   ├── ProgressController.java
+│   └── ProgressService.java
+├── search
+│   └── SearchService.java
+├── common
+│   ├── exception
+│   ├── security
+│   └── response
+└── config
+    └── AppConfig.java
+```
+
+### 💡 Notes:
+
+- **auth**: Authentication & JWT logic
+- **audio**: Audio metadata + streaming logic
+- **library**: User library logic (add/remove)
+- **progress**: Resume listening logic
+- **search**: Full-text search service
+- **common**: Shared exceptions, security, response wrappers
+- **config**: App-wide configurations
+
+
 ## 🧠 Domain Model (ERD)
 
 ```mermaid
