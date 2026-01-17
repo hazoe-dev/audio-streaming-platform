@@ -86,6 +86,10 @@ dev.hazoe.audiostreaming
 - **common**: Shared exceptions, security, response wrappers
 - **config**: App-wide configurations
 
+## 📁 Repository Structure
+
+- `/` – Architecture & design documents
+- `/audiostreaming` – Spring Boot backend service
 
 ## 🧠 Domain Model (ERD)
 
