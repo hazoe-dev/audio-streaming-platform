@@ -1,7 +1,8 @@
-package dev.hazoe.audiostreaming.auth;
+package dev.hazoe.audiostreaming.auth.controller;
 
-import dev.hazoe.audiostreaming.auth.model.dto.RegisterRequest;
-import dev.hazoe.audiostreaming.auth.model.dto.RegisterResponse;
+import dev.hazoe.audiostreaming.auth.service.AuthService;
+import dev.hazoe.audiostreaming.auth.dto.RegisterRequest;
+import dev.hazoe.audiostreaming.auth.dto.RegisterResponse;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;

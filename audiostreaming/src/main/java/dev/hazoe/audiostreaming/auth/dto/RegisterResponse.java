@@ -1,4 +1,4 @@
-package dev.hazoe.audiostreaming.auth.model.dto;
+package dev.hazoe.audiostreaming.auth.dto;
 
 public record RegisterResponse(
         String email,

@@ -1,4 +1,4 @@
-package dev.hazoe.audiostreaming.common.exception.dto;
+package dev.hazoe.audiostreaming.common.response;
 
 import java.util.Map;
 

@@ -1,12 +1,11 @@
 package dev.hazoe.audiostreaming.auth.controller;
 
-import dev.hazoe.audiostreaming.auth.AuthController;
-import dev.hazoe.audiostreaming.auth.model.dto.RegisterRequest;
-import dev.hazoe.audiostreaming.auth.model.dto.RegisterResponse;
-import dev.hazoe.audiostreaming.auth.AuthService;
+import dev.hazoe.audiostreaming.auth.dto.RegisterRequest;
+import dev.hazoe.audiostreaming.auth.dto.RegisterResponse;
+import dev.hazoe.audiostreaming.auth.service.AuthService;
 import dev.hazoe.audiostreaming.common.exception.EmailAlreadyExistsException;
-import dev.hazoe.audiostreaming.common.exception.dto.ApiErrorResponse;
-import dev.hazoe.audiostreaming.common.exception.dto.ValidationErrorResponse;
+import dev.hazoe.audiostreaming.common.response.ApiErrorResponse;
+import dev.hazoe.audiostreaming.common.response.ValidationErrorResponse;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -116,4 +115,5 @@ class AuthControllerTest {
         assertThat(response.email()).isEqualTo("test@email.com");
         assertThat(response.message()).isEqualTo("User registered successfully");
     }
+
 }

@@ -19,4 +19,21 @@
 → **Spring 4.3+** automatically injects a single constructor.  
 → `@Autowired` is optional in this case.  
 → Constructor injection is best practice.  
-→ It's not missing, it's written correctly.  
+→ It's not missing, it's written correctly. 
+
+🔹 **Decision record for JWT**  
+→ **Decision**: Stateless JWT auth  
+→ **Context**: MVP, small-to-medium user scale  
+→ **Choice**:
+```
+- Stateless  
+- No token persistence  
+- Access token exp = 1 hour 
+```
+→ **Consequences**:
+```text
+- Simple  
+- Scalable  
+- No immediate revoke   
+```
+👉 This is the right decision – not a mistake

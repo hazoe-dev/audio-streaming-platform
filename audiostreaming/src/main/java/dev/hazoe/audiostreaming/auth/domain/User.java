@@ -1,4 +1,4 @@
-package dev.hazoe.audiostreaming.auth.model;
+package dev.hazoe.audiostreaming.auth.domain;
 
 import jakarta.persistence.*;
 import lombok.*;

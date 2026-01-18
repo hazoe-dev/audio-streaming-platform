@@ -1,9 +1,10 @@
-package dev.hazoe.audiostreaming.auth;
+package dev.hazoe.audiostreaming.auth.service;
 
-import dev.hazoe.audiostreaming.auth.model.Role;
-import dev.hazoe.audiostreaming.auth.model.User;
-import dev.hazoe.audiostreaming.auth.model.dto.RegisterRequest;
-import dev.hazoe.audiostreaming.auth.model.dto.RegisterResponse;
+import dev.hazoe.audiostreaming.auth.repository.UserRepository;
+import dev.hazoe.audiostreaming.auth.domain.Role;
+import dev.hazoe.audiostreaming.auth.domain.User;
+import dev.hazoe.audiostreaming.auth.dto.RegisterRequest;
+import dev.hazoe.audiostreaming.auth.dto.RegisterResponse;
 import dev.hazoe.audiostreaming.common.exception.EmailAlreadyExistsException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;

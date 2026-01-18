@@ -1,4 +1,4 @@
-package dev.hazoe.audiostreaming.auth.model.dto;
+package dev.hazoe.audiostreaming.auth.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

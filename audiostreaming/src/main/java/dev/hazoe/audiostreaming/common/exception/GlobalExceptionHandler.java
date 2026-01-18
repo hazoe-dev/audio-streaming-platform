@@ -1,7 +1,7 @@
 package dev.hazoe.audiostreaming.common.exception;
 
-import dev.hazoe.audiostreaming.common.exception.dto.ApiErrorResponse;
-import dev.hazoe.audiostreaming.common.exception.dto.ValidationErrorResponse;
+import dev.hazoe.audiostreaming.common.response.ApiErrorResponse;
+import dev.hazoe.audiostreaming.common.response.ValidationErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
