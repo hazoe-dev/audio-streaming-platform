@@ -2,7 +2,7 @@ spring:
   application:
     name: audiostreaming
   datasource:
-    url: jdbc:postgresql://localhost:5432/hazoe
+    url: jdbc:postgresql://localhost:5432/audio
     username: postgres
     password:
     driver-class-name: org.postgresql.Driver
