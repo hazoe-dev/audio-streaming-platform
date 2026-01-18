@@ -24,14 +24,18 @@ class JwtProviderTest {
     // Base64 key >= 256 bits
     private static final String SECRET = genSecretKey();
 
-    private static final long EXPIRATION_SECONDS = 3600;
+    private static final long ACCESS_EXP = 3600;
+    private static final long REFRESH_EXP = 86400;
+    private static final String ISSUER = "audiostreaming-auth";
 
     @BeforeEach
     void setUp() {
         jwtProvider = new JwtProvider();
 
         ReflectionTestUtils.setField(jwtProvider, "secret", SECRET);
-        ReflectionTestUtils.setField(jwtProvider, "expiration", EXPIRATION_SECONDS);
+        ReflectionTestUtils.setField(jwtProvider, "accessExpiration", ACCESS_EXP);
+        ReflectionTestUtils.setField(jwtProvider, "refreshExpiration", REFRESH_EXP);
+        ReflectionTestUtils.setField(jwtProvider, "issuer", ISSUER);
     }
 
     // Ex: "qn0FJ7ZpPqK4Zz0cZ2P7z3y9w6Z2o8k1v1Qv8Z9l5QY="
@@ -41,18 +45,19 @@ class JwtProviderTest {
         );
     }
 
+    /* ================= ACCESS TOKEN ================= */
+
     @Test
-    void generateAndParseToken_shouldReturnValidClaims() {
+    void generateAccessToken_andParseToken_shouldReturnValidClaims() {
         // given
         Long userId = 1L;
         String role = "PREMIUM";
 
         // when
-        String token = jwtProvider.generateToken(userId, role);
-
-        Claims claims = jwtProvider.parseClaims(token);
+        String token = jwtProvider.generateAccessToken(userId, role);
 
         // then
+        Claims claims = jwtProvider.parseClaims(token);
         assertThat(token).isNotBlank();
         assertThat(claims.getSubject()).isEqualTo("1");
         assertThat(claims.get("role")).isEqualTo("PREMIUM");
@@ -61,12 +66,57 @@ class JwtProviderTest {
         assertThat(claims.getExpiration()).isNotNull();
         assertThat(claims.getExpiration().toInstant())
                 .isAfter(claims.getIssuedAt().toInstant());
+        assertThat(claims.getIssuer()).isEqualTo(ISSUER);
+        assertThat(claims.get("typ")).isEqualTo("ACCESS");
+        assertThat(claims.get("role")).isEqualTo("PREMIUM");
     }
 
     @Test
+    void generateAccessToken_shouldHaveCorrectExpiration() {
+        // given
+        Instant before = Instant.now();
+
+        // when
+        String token = jwtProvider.generateAccessToken(1L, "ADMIN");
+        Claims claims = jwtProvider.parseClaims(token);
+
+        Instant exp = claims.getExpiration().toInstant();
+
+        // then
+        assertThat(exp)
+                .isBetween(
+                        before.plusSeconds(ACCESS_EXP - 5),
+                        before.plusSeconds(ACCESS_EXP + 5)
+                );
+    }
+
+    /* ================= REFRESH TOKEN ================= */
+    @Test
+    void generateRefreshToken_shouldHaveRefreshType() {
+        // when
+        String token = jwtProvider.generateRefreshToken(99L);
+
+        // then
+        Claims claims = jwtProvider.parseClaims(token);
+
+        assertThat(claims.getSubject()).isEqualTo("99");
+        assertThat(claims.get("typ")).isEqualTo("REFRESH");
+    }
+
+    @Test
+    void validateRefreshToken_shouldReturnTrue_forValidRefreshToken() {
+        // given
+        String token = jwtProvider.generateRefreshToken(1L);
+
+        // when + then
+        assertThat(jwtProvider.validateRefreshToken(token)).isTrue();
+    }
+
+    /* ================= PARSING & VALIDATION ================= */
+    @Test
     void parseClaims_shouldThrowException_whenTokenIsTampered() {
         // given
-        String token = jwtProvider.generateToken(1L, "FREE");
+        String token = jwtProvider.generateAccessToken(1L, "FREE");
 
         // modify token
         String tamperedToken = token.substring(0, token.length() - 2) + "xx";
@@ -77,23 +127,20 @@ class JwtProviderTest {
     }
 
     @Test
-    void generateToken_shouldHaveCorrectExpiration() {
-        // given
-        Instant before = Instant.now();
+    void parseClaims_shouldThrowException_whenIssuerIsWrong() {
+        String token = Jwts.builder()
+                .subject("1")
+                .issuer("evil-issuer")
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + 10_000))
+                .signWith(Keys.hmacShaKeyFor(Base64.getDecoder().decode(SECRET)))
+                .compact();
 
-        // when
-        String token = jwtProvider.generateToken(1L, "ADMIN");
-        Claims claims = jwtProvider.parseClaims(token);
-
-        Instant exp = claims.getExpiration().toInstant();
-
-        // then
-        assertThat(exp)
-                .isBetween(
-                        before.plusSeconds(EXPIRATION_SECONDS - 5),
-                        before.plusSeconds(EXPIRATION_SECONDS + 5)
-                );
+        assertThatThrownBy(() -> jwtProvider.parseClaims(token))
+                .isInstanceOf(JwtException.class);
     }
+
+    /* ================= PRINCIPAL EXTRACTION ================= */
 
     @Test
     void getPrincipalFromToken_shouldReturnCorrectUserPrincipal() {
@@ -101,7 +148,7 @@ class JwtProviderTest {
         Long userId = 10L;
         String role = "ADMIN";
 
-        String token = jwtProvider.generateToken(userId, role);
+        String token = jwtProvider.generateAccessToken(userId, role);
 
         // when
         UserPrincipal principal = jwtProvider.getPrincipalFromToken(token);
@@ -124,9 +171,11 @@ class JwtProviderTest {
     }
 
     @Test
-    void getPrincipalFromToken_shouldFail_whenRoleMissing() {
+    void getPrincipalFromToken_shouldThrowException_whenRoleMissing() {
         String token = Jwts.builder()
                 .subject("1")
+                .issuer(ISSUER)
+                .claim("typ", "ACCESS")
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + 10_000))
                 .signWith(Keys.hmacShaKeyFor(Base64.getDecoder().decode(SECRET)))

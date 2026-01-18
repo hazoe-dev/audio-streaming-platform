@@ -37,12 +37,15 @@ class AuthServiceTest {
     @Mock
     private JwtProvider jwtProvider;
 
+    @Mock
+    private RefreshTokenService refreshTokenService;
+
     @InjectMocks
     private AuthService authService;
 
 
     @Test
-    void shouldThrowException_whenEmailAlreadyExists() {
+    void save_shouldThrowException_whenEmailAlreadyExists() {
         // given
         RegisterRequest request = new RegisterRequest(
                 "test@email.com",
@@ -61,7 +64,7 @@ class AuthServiceTest {
     }
 
     @Test
-    void shouldRegisterUserSuccessfully() {
+    void save_shouldRegisterUserSuccessfully() {
         // given
         RegisterRequest request = new RegisterRequest(
                 "test@email.com",
@@ -85,7 +88,7 @@ class AuthServiceTest {
     }
 
     @Test
-    void shouldSaveUserWithCorrectFields() {
+    void save_shouldSaveUserWithCorrectFields() {
         // given
         RegisterRequest request = new RegisterRequest(
                 "test@email.com",
@@ -116,7 +119,7 @@ class AuthServiceTest {
     }
 
     @Test
-    void shouldNotStorePlainPassword() {
+    void save_shouldNotStorePlainPassword() {
         // given
         RegisterRequest request = new RegisterRequest(
                 "test@email.com",
@@ -142,9 +145,12 @@ class AuthServiceTest {
     }
 
     @Test
-    void authenticate_success_shouldReturnToken() {
+    void authenticate_shouldReturnAuthResponse_whenCredentialsValid() {
         // given
-        LoginRequest request = new LoginRequest("test@example.com", "password123");
+        LoginRequest request = new LoginRequest(
+                "test@example.com",
+                "password123"
+        );
 
         User user = new User();
         user.setId(1L);
@@ -158,25 +164,35 @@ class AuthServiceTest {
         when(passwordEncoder.matches(request.password(), user.getPasswordHash()))
                 .thenReturn(true);
 
-        when(jwtProvider.generateToken(1L, "FREE"))
-                .thenReturn("jwt-token");
+        when(jwtProvider.generateAccessToken(
+                user.getId(),
+                user.getRole().name()
+        )).thenReturn("access-token");
+
+        when(refreshTokenService.rotate(user))
+                .thenReturn("refresh-token");
 
         // when
         AuthResponse response = authService.authenticate(request);
 
         // then
         assertNotNull(response);
-        assertEquals("jwt-token", response.accessToken());
+        assertEquals("access-token", response.accessToken());
+        assertEquals("refresh-token", response.refreshToken());
 
         verify(userRepository).findByEmail("test@example.com");
         verify(passwordEncoder).matches("password123", "hashed-password");
-        verify(jwtProvider).generateToken(1L, "FREE");
+        verify(jwtProvider).generateAccessToken(user.getId(), user.getRole().name());
+        verify(refreshTokenService).rotate(user);
     }
 
     @Test
-    void authenticate_emailNotFound_shouldThrowInvalidCredentials() {
+    void authenticate_shouldThrowInvalidCredentials_whenEmailNotFound() {
         // given
-        LoginRequest request = new LoginRequest("notfound@example.com", "password123");
+        LoginRequest request = new LoginRequest(
+                "notfound@example.com",
+                "password123"
+        );
 
         when(userRepository.findByEmail(request.email()))
                 .thenReturn(Optional.empty());
@@ -188,14 +204,20 @@ class AuthServiceTest {
         );
 
         verify(userRepository).findByEmail("notfound@example.com");
-        verifyNoInteractions(passwordEncoder);
-        verifyNoInteractions(jwtProvider);
+        verifyNoInteractions(
+                passwordEncoder,
+                jwtProvider,
+                refreshTokenService
+        );
     }
 
     @Test
-    void authenticate_wrongPassword_shouldThrowInvalidCredentials() {
+    void authenticate_shouldThrowInvalidCredentials_whenWrongPassword() {
         // given
-        LoginRequest request = new LoginRequest("test@example.com", "wrong-password");
+        LoginRequest request = new LoginRequest(
+                "test@example.com",
+                "wrong-password"
+        );
 
         User user = new User();
         user.setId(1L);
@@ -216,7 +238,7 @@ class AuthServiceTest {
         );
 
         verify(passwordEncoder).matches("wrong-password", "hashed-password");
-        verifyNoInteractions(jwtProvider);
+        verifyNoInteractions(jwtProvider,  refreshTokenService);
     }
 
 }

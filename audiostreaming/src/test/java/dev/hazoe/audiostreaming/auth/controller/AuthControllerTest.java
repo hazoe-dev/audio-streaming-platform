@@ -1,12 +1,11 @@
 package dev.hazoe.audiostreaming.auth.controller;
 
-import dev.hazoe.audiostreaming.auth.dto.AuthResponse;
-import dev.hazoe.audiostreaming.auth.dto.LoginRequest;
-import dev.hazoe.audiostreaming.auth.dto.RegisterRequest;
-import dev.hazoe.audiostreaming.auth.dto.RegisterResponse;
+import dev.hazoe.audiostreaming.auth.dto.*;
+import dev.hazoe.audiostreaming.auth.security.JwtAuthenticationFilter;
 import dev.hazoe.audiostreaming.auth.service.AuthService;
 import dev.hazoe.audiostreaming.common.exception.EmailAlreadyExistsException;
 import dev.hazoe.audiostreaming.common.exception.InvalidCredentialsException;
+import dev.hazoe.audiostreaming.common.exception.UnauthorizedException;
 import dev.hazoe.audiostreaming.common.response.ApiErrorResponse;
 import dev.hazoe.audiostreaming.common.response.ValidationErrorResponse;
 import org.junit.jupiter.api.Test;
@@ -27,6 +26,8 @@ import static org.mockito.Mockito.*;
 @WebMvcTest(AuthController.class)
 @AutoConfigureMockMvc(addFilters = false)
 class AuthControllerTest {
+    @MockitoBean
+    JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @MockitoBean
     private AuthService authService;
@@ -36,6 +37,8 @@ class AuthControllerTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    /* ================= REGISTER ================= */
 
     @Test
     void register_shouldReturn400_whenInvalidParams() throws Exception {
@@ -55,9 +58,12 @@ class AuthControllerTest {
         String body = result.getResponse().getContentAsString();
 
         ValidationErrorResponse response =
-                objectMapper.readValue(body, ValidationErrorResponse.class);
+                objectMapper.readValue(
+                        body,
+                        ValidationErrorResponse.class);
 
         assertThat(response.message()).isEqualTo("Validation failed");
+        verifyNoInteractions(authService);
     }
 
     @Test
@@ -121,6 +127,7 @@ class AuthControllerTest {
         assertThat(response.message()).isEqualTo("User registered successfully");
     }
 
+    /* ================= LOGIN ================= */
     @Test
     void login_shouldReturn400_whenInvalidParams() throws Exception {
         // when
@@ -157,7 +164,10 @@ class AuthControllerTest {
                 "password123"
         );
 
-        AuthResponse authResponse = new AuthResponse("jwt-token");
+        AuthResponse authResponse = new AuthResponse(
+                "access-token",
+                "refresh-token"
+        );
 
         when(authService.authenticate(any(LoginRequest.class)))
                 .thenReturn(authResponse);
@@ -178,7 +188,8 @@ class AuthControllerTest {
         AuthResponse response =
                 objectMapper.readValue(body, AuthResponse.class);
 
-        assertThat(response.accessToken()).isEqualTo("jwt-token");
+        assertThat(response.accessToken()).isEqualTo("access-token");
+        assertThat(response.refreshToken()).isEqualTo("refresh-token");
 
         verify(authService).authenticate(any(LoginRequest.class));
     }
@@ -204,6 +215,54 @@ class AuthControllerTest {
         // then
         assertThat(result)
                 .hasStatus(HttpStatus.UNAUTHORIZED);
+    }
+
+    /* ================= REFRESH ================= */
+    @Test
+    void refresh_shouldReturn200_whenValidRefreshToken() throws Exception {
+
+        given(authService.refreshToken(any(RefreshTokenRequest.class)))
+                .willReturn(new AuthResponse("new-access", "new-refresh"));
+
+        var result = mvc.post()
+                .uri("/api/auth/refresh")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                {
+                  "refreshToken": "valid-refresh-token"
+                }
+            """)
+                .exchange();
+
+        assertThat(result).hasStatus(HttpStatus.OK);
+
+        AuthResponse response =
+                objectMapper.readValue(
+                        result.getResponse().getContentAsString(),
+                        AuthResponse.class
+                );
+
+        assertThat(response.accessToken()).isEqualTo("new-access");
+        assertThat(response.refreshToken()).isEqualTo("new-refresh");
+    }
+
+    @Test
+    void refresh_shouldReturn401_whenInvalidRefreshToken() {
+
+        given(authService.refreshToken(any(RefreshTokenRequest.class)))
+                .willThrow(new UnauthorizedException("Invalid refresh token"));
+
+        var result = mvc.post()
+                .uri("/api/auth/refresh")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                {
+                  "refreshToken": "invalid-token"
+                }
+            """)
+                .exchange();
+
+        assertThat(result).hasStatus(HttpStatus.UNAUTHORIZED);
     }
 
 }

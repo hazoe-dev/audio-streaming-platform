@@ -1,12 +1,10 @@
 package dev.hazoe.audiostreaming.auth.service;
 
-import dev.hazoe.audiostreaming.auth.dto.AuthResponse;
-import dev.hazoe.audiostreaming.auth.dto.LoginRequest;
+import dev.hazoe.audiostreaming.auth.domain.RefreshToken;
+import dev.hazoe.audiostreaming.auth.dto.*;
 import dev.hazoe.audiostreaming.auth.repository.UserRepository;
 import dev.hazoe.audiostreaming.auth.domain.Role;
 import dev.hazoe.audiostreaming.auth.domain.User;
-import dev.hazoe.audiostreaming.auth.dto.RegisterRequest;
-import dev.hazoe.audiostreaming.auth.dto.RegisterResponse;
 import dev.hazoe.audiostreaming.auth.security.JwtProvider;
 import dev.hazoe.audiostreaming.common.exception.EmailAlreadyExistsException;
 import dev.hazoe.audiostreaming.common.exception.InvalidCredentialsException;
@@ -23,6 +21,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
+    private final RefreshTokenService refreshTokenService;
 
     @Transactional
     public RegisterResponse save(RegisterRequest request) {
@@ -44,7 +43,9 @@ public class AuthService {
         );
     }
 
-    @Transactional(readOnly = true)
+    /* ================= LOGIN ================= */
+
+    @Transactional
     public AuthResponse authenticate(LoginRequest request) {
 
         User user = userRepository.findByEmail(request.email())
@@ -54,11 +55,31 @@ public class AuthService {
             throw new InvalidCredentialsException();
         }
 
-        String token = jwtProvider.generateToken(
+        String accessToken = jwtProvider.generateAccessToken(
                 user.getId(),
                 user.getRole().name()
         );
 
-        return new AuthResponse(token);
+        String refreshToken =  refreshTokenService.rotate(user);
+
+        return new AuthResponse(accessToken, refreshToken);
+    }
+
+    /* ================= REFRESH ================= */
+
+    @Transactional
+    public AuthResponse refreshToken(RefreshTokenRequest request) {
+
+        RefreshToken stored = refreshTokenService.validate(request.refreshToken());
+
+        User user = stored.getUser();
+
+        String newAccessToken = jwtProvider.generateAccessToken(
+                user.getId(),
+                user.getRole().name()
+        );
+        String newRefreshToken = refreshTokenService.rotate(user);
+
+        return new AuthResponse(newAccessToken, newRefreshToken);
     }
 }
