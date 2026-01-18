@@ -53,9 +53,28 @@ Each module represents a bounded context.
 ```text
 dev.hazoe.audiostreaming
 ├── auth
-│   ├── AuthController.java
-│   ├── AuthService.java
-│   └── JwtProvider.java
+│   ├── controller
+│   │   └── AuthController.java
+│   ├── service
+│   │   ├── RefreshTokenService.java
+│   │   └── AuthService.java
+│   ├── repository
+│   │   ├── UserRepository.java
+│   │   └── RefreshTokenRepository.java
+│   ├── domain
+│   │   ├── User.java
+│   │   ├── Role.java
+│   │   └── RefreshToken.java
+│   ├── dto
+│   │   ├── LoginRequest.java
+│   │   ├── RegisterRequest.java
+│   │   ├── RefreshTokenRequest.java
+│   │   ├── RegisterResponse.java
+│   │   └── AuthResponse.java
+│   └── security
+│       ├── JwtProvider.java
+│       ├── JwtAuthenticationFilter.java
+│       └── UserPrincipal.java
 ├── audio
 │   ├── AudioController.java
 │   ├── AudioService.java
@@ -69,16 +88,29 @@ dev.hazoe.audiostreaming
 ├── search
 │   └── SearchService.java
 ├── common
-│   ├── exception
 │   ├── security
+│   │   └── SecurityConfig.java
+│   ├── exception
+│   │   ├── GlobalExceptionHandler.java
+│   │   └── EmailAlreadyExistsException.java
 │   └── response
-└── config
-    └── AppConfig.java
+│       ├── ApiErrorResponse.java
+│       └── ValidationErrorResponse.java
+├── config
+│   └── AppConfig.java
+└── AudiostreamingApplication.java
 ```
 
 ### 💡 Notes:
 
 - **auth**: Authentication & JWT logic
+  - **controller**: HTTP layer, request/response handling
+  - **service**: application business logic
+  - **domain**: core business entities and enums
+  - **repository**: data access abstraction
+  - **dto**: API contracts (transport objects)
+  - **security**: authentication and JWT-related components
+  
 - **audio**: Audio metadata + streaming logic
 - **library**: User library logic (add/remove)
 - **progress**: Resume listening logic
@@ -86,6 +118,22 @@ dev.hazoe.audiostreaming
 - **common**: Shared exceptions, security, response wrappers
 - **config**: App-wide configurations
 
+#### ➡️ Domain Model Decision
+Domain entities are placed under the `domain` package.  
+Although the current domain model is anemic (mainly representing persistence state),
+it is intentionally designed this way to keep the scope focused.
+Business rules can be gradually enriched as the system evolves.
+
+#### ➡️ Domain & Persistence Design
+
+Domain entities are implemented as JPA entities and therefore depend on JPA/Hibernate annotations.
+This is a conscious trade-off to reduce complexity and avoid duplicate models.
+Framework-specific logic is kept outside the domain layer.
+
+## 📁 Repository Structure
+
+- `/` – Architecture & design documents
+- `/audiostreaming` – Spring Boot backend service
 
 ## 🧠 Domain Model (ERD)
 
@@ -131,6 +179,12 @@ erDiagram
 - last_position_seconds
 - updated_at
 - UNIQUE(user_id, audio_id)
+
+### Refresh Token
+- id (PK)
+- expires_at 
+- token
+- user_id (PK -> User)
 
 ## 🧪 Initial SQL Schema (Flyway V1)
 
@@ -220,6 +274,131 @@ Request body:
 ```
 GET /api/search?keyword=sony
 ```
+### 🔐 JWT Access Token Authentication Flow
+
+```text
+Client
+  |
+  | 1. POST /api/auth/login
+  |
+  v
+AuthController
+  |
+  | 2. Validate credentials
+  |
+  v
+AuthService
+  |
+  | 3. Generate access token (short-lived)
+  |    Generate refresh token (long-lived)
+  |
+  v
+Client
+```
+### 🔁 Refresh Token Flow
+
+```text
+Client
+  |
+  | Access token expired
+  |
+  | 1. POST /api/auth/refresh
+  |    { refreshToken }
+  |
+  v
+AuthController
+  |
+  | 2. Validate refresh token (signature + exp)
+  | 3. Lookup refresh token in DB
+  |
+  v
+AuthService
+  |
+  | 4. Rotate refresh token
+  |    - delete old
+  |    - issue new refresh token
+  |
+  | 5. Generate new access token
+  |
+  v
+Client
+```
+
+### 🧠 Detailed Request Lifecycle
+
+```text
+[HTTP REQUEST]
+    |
+    | Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
+    |
+    v
+JwtAuthenticationFilter
+    |
+    |-- Token missing?
+    |     → continue as anonymous
+    |
+    |-- Token invalid / expired?
+    |     → clear context → 401
+    |
+    |-- Token valid
+    |     → extract userId + role
+    |     → create UserPrincipal
+    |     → set SecurityContext
+    |
+    v
+SecurityFilterChain
+    |
+    |-- has required role?
+    |     → YES → Controller
+    |     → NO  → 403
+```
+### 🔑 Access Token Payload Design
+
+```json
+{
+  "sub": "42",
+  "role": "PREMIUM",
+  "typ": "ACCESS",
+  "issuer": "audiostreaming",
+  "iat": 1690000000,
+  "exp": 1690003600
+}
+```
+### 🔑 Refresh Token Payload Design
+
+```json
+{
+  "sub": "42",
+  "typ": "REFRESH",
+  "issuer": "audiostreaming",
+  "iat": 1690000000,
+  "exp": 1690003600
+}
+```
+
+#### Design decisions
+
+* `sub` = userId (immutable)
+* `role` stored as claim
+* `issuer` stored as claim
+  - Token rejected if it’s not from the expected issuer
+* `typ` stored as claim -> Helpful tips:
+  - Filter only accepts `ACCESS`
+  - Refresh endpoint only accepts `REFRESH`
+* No sensitive data in token
+
+### 🛡️ Security Design Choices 
+
+| Decision                 | Reason                       |
+| ------------------------ | ---------------------------- |
+| Stateless access token   | Fast request authentication  |
+| Stateful refresh token   | Revocation & reuse detection |
+| Short-lived access token | Limit token leak impact      |
+| Refresh token rotation   | Prevent replay attacks       |
+| Role-based access        | Clear authorization boundary |
+
+Although access tokens are stateless, refresh tokens are persisted in the database.
+This hybrid approach balances performance and security while enabling token revocation.
 
 ## 🚀 Future Improvements
 

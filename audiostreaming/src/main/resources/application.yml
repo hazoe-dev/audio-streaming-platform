@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: audiostreaming
+  datasource:
+    url: jdbc:postgresql://localhost:5432/audio
+    username: postgres
+    password:
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+
+server:
+  port: 8080
+
+
+security:
+  jwt:
+    secret: MSOt3eJZ+Zq/U+dzQ0j9lT3A5Vdo41uhLKYVMRAVdRw=
+    access-expiration: 900      # 15 minutes
+    refresh-expiration: 2592000 # 30 days
+    issuer: audiostreaming
