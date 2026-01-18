@@ -53,9 +53,24 @@ Each module represents a bounded context.
 ```text
 dev.hazoe.audiostreaming
 ├── auth
-│   ├── AuthController.java
-│   ├── AuthService.java
-│   └── JwtProvider.java
+│   ├── controller
+│   │   └── AuthController.java
+│   ├── service
+│   │   └── AuthService.java
+│   ├── repository
+│   │   └── UserRepository.java
+│   ├── domain
+│   │   ├── User.java
+│   │   └── Role.java
+│   ├── dto
+│   │   ├── LoginRequest.java
+│   │   ├── RegisterRequest.java
+│   │   ├── RegisterResponse.java
+│   │   └── AuthResponse.java
+│   └── security
+│       ├── JwtProvider.java
+│       ├── JwtAuthenticationFilter.java
+│       └── UserPrincipal.java
 ├── audio
 │   ├── AudioController.java
 │   ├── AudioService.java
@@ -69,22 +84,47 @@ dev.hazoe.audiostreaming
 ├── search
 │   └── SearchService.java
 ├── common
-│   ├── exception
 │   ├── security
+│   │   └── SecurityConfig.java
+│   ├── exception
+│   │   ├── GlobalExceptionHandler.java
+│   │   └── EmailAlreadyExistsException.java
 │   └── response
-└── config
-    └── AppConfig.java
+│       ├── ApiErrorResponse.java
+│       └── ValidationErrorResponse.java
+├── config
+│   └── AppConfig.java
+└── AudiostreamingApplication.java
 ```
 
 ### 💡 Notes:
 
 - **auth**: Authentication & JWT logic
+  - **controller**: HTTP layer, request/response handling
+  - **service**: application business logic
+  - **domain**: core business entities and enums
+  - **repository**: data access abstraction
+  - **dto**: API contracts (transport objects)
+  - **security**: authentication and JWT-related components
+  
 - **audio**: Audio metadata + streaming logic
 - **library**: User library logic (add/remove)
 - **progress**: Resume listening logic
 - **search**: Full-text search service
 - **common**: Shared exceptions, security, response wrappers
 - **config**: App-wide configurations
+
+#### ➡️ Domain Model Decision
+Domain entities are placed under the `domain` package.  
+Although the current domain model is anemic (mainly representing persistence state),
+it is intentionally designed this way to keep the scope focused.
+Business rules can be gradually enriched as the system evolves.
+
+#### ➡️ Domain & Persistence Design
+
+Domain entities are implemented as JPA entities and therefore depend on JPA/Hibernate annotations.
+This is a conscious trade-off to reduce complexity and avoid duplicate models.
+Framework-specific logic is kept outside the domain layer.
 
 ## 📁 Repository Structure
 
