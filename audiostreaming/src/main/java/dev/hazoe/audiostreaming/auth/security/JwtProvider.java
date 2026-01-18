@@ -1,6 +1,7 @@
 package dev.hazoe.audiostreaming.auth.security;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -46,5 +47,16 @@ public class JwtProvider {
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
+    }
+
+    public UserPrincipal getPrincipalFromToken(String token) {
+        Claims claims = parseClaims(token);
+
+        Long userId = Long.parseLong(claims.getSubject());
+        String role = claims.get("role", String.class);
+        if (role == null) {
+            throw new JwtException("Missing role claim");
+        }
+        return new UserPrincipal(userId, role);
     }
 }

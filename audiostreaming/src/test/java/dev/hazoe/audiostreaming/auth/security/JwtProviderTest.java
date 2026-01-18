@@ -1,16 +1,21 @@
 package dev.hazoe.audiostreaming.auth.security;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Encoders;
+import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Instant;
+import java.util.Base64;
+import java.util.Date;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class JwtProviderTest {
 
@@ -88,6 +93,49 @@ class JwtProviderTest {
                         before.plusSeconds(EXPIRATION_SECONDS - 5),
                         before.plusSeconds(EXPIRATION_SECONDS + 5)
                 );
+    }
+
+    @Test
+    void getPrincipalFromToken_shouldReturnCorrectUserPrincipal() {
+        // given
+        Long userId = 10L;
+        String role = "ADMIN";
+
+        String token = jwtProvider.generateToken(userId, role);
+
+        // when
+        UserPrincipal principal = jwtProvider.getPrincipalFromToken(token);
+
+        // then
+        assertThat(principal).isNotNull();
+        assertThat(principal.getUsername()).isEqualTo(userId.toString());
+        assertThat(principal.getAuthorities())
+                .extracting(GrantedAuthority::getAuthority)
+                .containsExactly("ROLE_ADMIN");
+    }
+
+    @Test
+    void getPrincipalFromToken_shouldThrowException_whenTokenInvalid() {
+        String invalidToken = "invalid.jwt.token";
+
+        assertThatThrownBy(() ->
+                jwtProvider.getPrincipalFromToken(invalidToken)
+        ).isInstanceOf(Exception.class);
+    }
+
+    @Test
+    void getPrincipalFromToken_shouldFail_whenRoleMissing() {
+        String token = Jwts.builder()
+                .subject("1")
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + 10_000))
+                .signWith(Keys.hmacShaKeyFor(Base64.getDecoder().decode(SECRET)))
+                .compact();
+
+        assertThatThrownBy(() ->
+                jwtProvider.getPrincipalFromToken(token)
+        ).isInstanceOf(JwtException.class)
+                .hasMessageContaining("Missing role");
     }
 
 }
