@@ -1,231 +1,220 @@
 # 🎧 Audio Streaming Platform (Fonos-like Backend)
 
-A backend-focused audio streaming platform inspired by Fonos/Audible.
-This project is designed primarily for backend system design and interview demonstration.
+A **backend-focused audio streaming platform** inspired by Fonos / Audible.
+This project is intentionally designed as a **system design & backend engineering showcase**, not a full product.
+
+> **Goal:** demonstrate clean backend architecture, security design, and streaming fundamentals in an interview-ready format.
+
+---
+
+## 📌 Project Overview
+
+This project implements the core backend capabilities of an audio streaming platform:
+
+* Secure user authentication with JWT + refresh token rotation
+* Audio catalog with free & premium content
+* HTTP Range–based audio streaming (seek & resume)
+* Listening progress tracking
+* User library management
+* Full-text search using PostgreSQL
+
+The system is implemented as a **modular monolith**, emphasizing clear boundaries and future scalability.
+
+---
 
 ## 🎯 Project Goals
 
-- Focus on backend architecture and business logic
-- Support audio streaming with HTTP Range Requests
-- Resume listening functionality
-- Clear separation of responsibilities (modular monolith)
-- Interview-ready documentation and design
+* Focus on **backend architecture & business logic**
+* Demonstrate **secure authentication design**
+* Support **HTTP Range Requests** for audio streaming
+* Enable **resume listening** functionality
+* Maintain **clean separation of responsibilities**
+* Be **interview-ready** in both design and documentation
 
-## ❌ Non-goals (Out of Scope)
+---
 
-- Frontend UI
-- Payment integration
-- Offline download
-- Recommendation system
-- Microservice implementation (future consideration only)
+## ❌ Non-Goals (Out of Scope)
+
+The following are intentionally excluded to keep the scope focused:
+
+* Frontend UI
+* Payment & subscription billing
+* Offline audio downloads
+* Recommendation system
+* Microservice deployment (future consideration only)
+
+---
 
 ## 🧩 Core Features
 
-- User authentication (JWT)
-- Audio catalog (free & premium)
-- Audio streaming with seek support
-- Resume listening progress
-- User library
-- Full-text search
+* **Authentication & Authorization**
 
-## 📐 System Architecture
+  * JWT access tokens
+  * Stateful refresh tokens with rotation
+  * Role-based access control (FREE / PREMIUM / ADMIN)
+
+* **Audio Management**
+
+  * Audio metadata
+  * Premium access enforcement
+
+* **Audio Streaming**
+
+  * HTTP Range Requests (`206 Partial Content`)
+  * Seek & resume support
+
+* **Listening Progress**
+
+  * Track last listened position per user & audio
+
+* **User Library**
+
+  * Add / remove audio
+  * Persistent ownership tracking
+
+* **Search**
+
+  * PostgreSQL full-text search using `tsvector`
+
+---
+
+## 🏗️ Architecture
+
+### Modular Monolith
 
 This project follows a **Modular Monolith** architecture.
 
-```
+* Strong module boundaries
+* Shared database
+* Single deployable unit
+* Mirrors future microservice boundaries without distributed complexity
 
+```text
 Controller
-↓
+  ↓
 Service (Business Logic)
-↓
+  ↓
 Domain Model
-↓
+  ↓
 Repository (JPA)
-↓
+  ↓
 PostgreSQL
-
 ```
 
-## 📦 Package Structure
-This project follows a modular monolith architecture.
-Each module represents a bounded context.
+> A modular monolith provides transactional consistency and simpler operations 
+> while maintaining clean separation of concerns.  
+
+➡️ **Detailed architecture decisions, module boundaries, and design rationale:**  
+➡️ See [docs/architecture.md](docs/architecture.md)
+
+---
+
+## 📦 Package Structure (High-Level)
+
+Each top-level package represents a **bounded context**.
 
 ```text
 dev.hazoe.audiostreaming
-├── auth
-│   ├── controller
-│   │   └── AuthController.java
-│   ├── service
-│   │   ├── RefreshTokenService.java
-│   │   └── AuthService.java
-│   ├── repository
-│   │   ├── UserRepository.java
-│   │   └── RefreshTokenRepository.java
-│   ├── domain
-│   │   ├── User.java
-│   │   ├── Role.java
-│   │   └── RefreshToken.java
-│   ├── dto
-│   │   ├── LoginRequest.java
-│   │   ├── RegisterRequest.java
-│   │   ├── RefreshTokenRequest.java
-│   │   ├── RegisterResponse.java
-│   │   └── AuthResponse.java
-│   └── security
-│       ├── JwtProvider.java
-│       ├── JwtAuthenticationFilter.java
-│       └── UserPrincipal.java
-├── audio
-│   ├── AudioController.java
-│   ├── AudioService.java
-│   └── StreamingService.java
-├── library
-│   ├── LibraryController.java
-│   └── LibraryService.java
-├── progress
-│   ├── ProgressController.java
-│   └── ProgressService.java
-├── search
-│   └── SearchService.java
-├── common
-│   ├── security
-│   │   └── SecurityConfig.java
-│   ├── exception
-│   │   ├── GlobalExceptionHandler.java
-│   │   └── EmailAlreadyExistsException.java
-│   └── response
-│       ├── ApiErrorResponse.java
-│       └── ValidationErrorResponse.java
+├── auth        # authentication & security
+├── audio       # audio catalog & access rules
+├── library     # user-owned audio items
+├── progress    # resume listening
+├── search      # full-text search
+├── common      # shared utilities
 ├── config
-│   └── AppConfig.java
 └── AudiostreamingApplication.java
 ```
 
-### 💡 Notes:
+> Each module internally follows a layered structure
+> (`controller / service / domain / repository`).
 
-- **auth**: Authentication & JWT logic
-  - **controller**: HTTP layer, request/response handling
-  - **service**: application business logic
-  - **domain**: core business entities and enums
-  - **repository**: data access abstraction
-  - **dto**: API contracts (transport objects)
-  - **security**: authentication and JWT-related components
-  
-- **audio**: Audio metadata + streaming logic
-- **library**: User library logic (add/remove)
-- **progress**: Resume listening logic
-- **search**: Full-text search service
-- **common**: Shared exceptions, security, response wrappers
-- **config**: App-wide configurations
+---
 
-#### ➡️ Domain Model Decision
-Domain entities are placed under the `domain` package.  
-Although the current domain model is anemic (mainly representing persistence state),
-it is intentionally designed this way to keep the scope focused.
-Business rules can be gradually enriched as the system evolves.
+## 🧠 Domain Model Philosophy
 
-#### ➡️ Domain & Persistence Design
+Domain entities are implemented as **JPA entities** and represent persistence state.
 
-Domain entities are implemented as JPA entities and therefore depend on JPA/Hibernate annotations.
-This is a conscious trade-off to reduce complexity and avoid duplicate models.
-Framework-specific logic is kept outside the domain layer.
+* The domain model is currently **anemic by design**
+* Focus is on infrastructure correctness (security, streaming, persistence)
+* Business logic can be enriched as requirements grow
 
-## 📁 Repository Structure
+> This is a conscious trade-off to avoid duplicate models and unnecessary abstraction.
 
-- `/` – Architecture & design documents
-- `/audiostreaming` – Spring Boot backend service
+---
 
 ## 🧠 Domain Model (ERD)
 
 ```mermaid
 erDiagram
-    USER ||--o{ LIBRARY : has
-    LIBRARY ||--o{ AUDIO : contains
-    USER ||--o{ LISTENING_PROGRESS : tracks
-    AUDIO ||--o{ LISTENING_PROGRESS : updates
+  USER ||--o{ LIBRARY_ITEM : owns
+  AUDIO ||--o{ LIBRARY_ITEM : referenced_by
+  USER ||--o{ LISTENING_PROGRESS : tracks
+  AUDIO ||--o{ LISTENING_PROGRESS : tracked_in
 ```
+
+---
 
 ## 🗄️ Database Schema
 
 ### User
-- id (PK)
-- email (unique)
-- password_hash
-- role (FREE | PREMIUM | ADMIN)
-- created_at
+
+* id (PK)
+* email (unique)
+* password_hash
+* role (FREE | PREMIUM | ADMIN)
+* created_at
 
 ### Audio
-- id (PK)
-- title
-- description
-- duration_seconds
-- audio_url
-- cover_url
-- is_premium
-- search_vector (tsvector)
-- created_at
 
-### Library
-- id (PK)
-- user_id (FK → User)
-- audio_id (FK → Audio)
-- created_at
-- UNIQUE(user_id, audio_id)
+* id (PK)
+* title
+* description
+* duration_seconds
+* audio_path
+* cover_path
+* is_premium
+* search_vector (tsvector)
+* owner_id (FK → User.id)
+* created_at
+
+### Library Item
+
+* id (PK)
+* user_id (FK → users)
+* audio_id (FK → audio)
+* created_at
+* UNIQUE(user_id, audio_id)
 
 ### Listening Progress
-- id (PK)
-- user_id (FK → User)
-- audio_id (FK → Audio)
-- last_position_seconds
-- updated_at
-- UNIQUE(user_id, audio_id)
+
+* id (PK)
+* user_id (FK → users)
+* audio_id (FK → audio)
+* last_position_seconds
+* updated_at
+* UNIQUE(user_id, audio_id)
 
 ### Refresh Token
-- id (PK)
-- expires_at 
-- token
-- user_id (PK -> User)
 
-## 🧪 Initial SQL Schema (Flyway V1)
+* id (PK)
+* token (unique)
+* user_id (FK → users)
+* expires_at
+* created_at
 
-```sql
-CREATE TABLE users (
-    id BIGSERIAL PRIMARY KEY,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    role VARCHAR(20) NOT NULL,
-    created_at TIMESTAMP DEFAULT now()
-);
+---
 
-CREATE TABLE audio (
-    id BIGSERIAL PRIMARY KEY,
-    title VARCHAR(255) NOT NULL,
-    description TEXT,
-    duration_seconds INT NOT NULL,
-    audio_url TEXT NOT NULL,
-    cover_url TEXT,
-    is_premium BOOLEAN DEFAULT FALSE,
-    search_vector tsvector,
-    created_at TIMESTAMP DEFAULT now()
-);
+## 🗄️ Database Design (Overview)
 
-CREATE TABLE library (
-    id BIGSERIAL PRIMARY KEY,
-    user_id BIGINT REFERENCES users(id),
-    audio_id BIGINT REFERENCES audio(id),
-    created_at TIMESTAMP DEFAULT now(),
-    UNIQUE(user_id, audio_id)
-);
+* PostgreSQL as the primary datastore
+* Relational schema with explicit constraints
+* `BIGINT` primary keys managed by JPA
+* Indexed for user-centric access patterns
+* Join tables modeled explicitly as entities (e.g. `LIBRARY_ITEM`)
 
-CREATE TABLE listening_progress (
-    id BIGSERIAL PRIMARY KEY,
-    user_id BIGINT REFERENCES users(id),
-    audio_id BIGINT REFERENCES audio(id),
-    last_position_seconds INT NOT NULL,
-    updated_at TIMESTAMP DEFAULT now(),
-    UNIQUE(user_id, audio_id)
-);
-````
+➡️ See [docs/database.md](docs/database.md) for full schema and design rationale.
+
+---
 
 ## 🔌 API Contract (Frozen Scope)
 
@@ -260,8 +249,6 @@ POST /api/progress
 GET  /api/progress/{audioId}
 ```
 
-Request body:
-
 ```json
 {
   "audioId": 1,
@@ -274,148 +261,84 @@ Request body:
 ```
 GET /api/search?keyword=sony
 ```
-### 🔐 JWT Access Token Authentication Flow
 
-```text
-Client
-  |
-  | 1. POST /api/auth/login
-  |
-  v
-AuthController
-  |
-  | 2. Validate credentials
-  |
-  v
-AuthService
-  |
-  | 3. Generate access token (short-lived)
-  |    Generate refresh token (long-lived)
-  |
-  v
-Client
-```
-### 🔁 Refresh Token Flow
+➡️ Full API details: [docs/api.md](docs/api.md)
 
-```text
-Client
-  |
-  | Access token expired
-  |
-  | 1. POST /api/auth/refresh
-  |    { refreshToken }
-  |
-  v
-AuthController
-  |
-  | 2. Validate refresh token (signature + exp)
-  | 3. Lookup refresh token in DB
-  |
-  v
-AuthService
-  |
-  | 4. Rotate refresh token
-  |    - delete old
-  |    - issue new refresh token
-  |
-  | 5. Generate new access token
-  |
-  v
-Client
-```
+---
 
-### 🧠 Detailed Request Lifecycle
+## 🔐 Authentication & Security (Overview)
 
-```text
-[HTTP REQUEST]
-    |
-    | Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
-    |
-    v
-JwtAuthenticationFilter
-    |
-    |-- Token missing?
-    |     → continue as anonymous
-    |
-    |-- Token invalid / expired?
-    |     → clear context → 401
-    |
-    |-- Token valid
-    |     → extract userId + role
-    |     → create UserPrincipal
-    |     → set SecurityContext
-    |
-    v
-SecurityFilterChain
-    |
-    |-- has required role?
-    |     → YES → Controller
-    |     → NO  → 403
-```
-### 🔑 Access Token Payload Design
+- JWT access tokens (stateless, short-lived)
+- Stateful refresh tokens with rotation
+- Role-based authorization
+- Token type enforcement (ACCESS vs REFRESH)
 
-```json
-{
-  "sub": "42",
-  "role": "PREMIUM",
-  "typ": "ACCESS",
-  "issuer": "audiostreaming",
-  "iat": 1690000000,
-  "exp": 1690003600
-}
-```
-### 🔑 Refresh Token Payload Design
+➡️ See [docs/authentication.md](docs/authentication.md) for detailed flows.
 
-```json
-{
-  "sub": "42",
-  "typ": "REFRESH",
-  "issuer": "audiostreaming",
-  "iat": 1690000000,
-  "exp": 1690003600
-}
-```
+---
 
-#### Design decisions
+## 🎵 Audio Streaming Design
 
-* `sub` = userId (immutable)
-* `role` stored as claim
-* `issuer` stored as claim
-  - Token rejected if it’s not from the expected issuer
-* `typ` stored as claim -> Helpful tips:
-  - Filter only accepts `ACCESS`
-  - Refresh endpoint only accepts `REFRESH`
-* No sensitive data in token
+* HTTP Range Requests
+* Seek & resume support
+* Partial content delivery (`206 Partial Content`)
+* Authorization validated **before streaming begins**
 
-### 🛡️ Security Design Choices 
+➡️ **Streaming flow & HTTP semantics:**  
+➡️ See [docs/streaming.md](docs/streaming.md)
 
-| Decision                 | Reason                       |
-| ------------------------ | ---------------------------- |
-| Stateless access token   | Fast request authentication  |
-| Stateful refresh token   | Revocation & reuse detection |
-| Short-lived access token | Limit token leak impact      |
-| Refresh token rotation   | Prevent replay attacks       |
-| Role-based access        | Clear authorization boundary |
+---
 
-Although access tokens are stateless, refresh tokens are persisted in the database.
-This hybrid approach balances performance and security while enabling token revocation.
+## 🔍 Search Design
+
+* PostgreSQL full-text search (`tsvector`)
+* GIN index for fast lookup
+* Search vector updated on insert/update
+
+> Search is intentionally kept inside PostgreSQL to avoid premature Elasticsearch complexity.
+
+---
+
+## 📎 Notes
+
+This project is **not a startup MVP**.  
+It is a **backend engineering portfolio piece**, optimized for:
+
+* Code review discussions
+* System design interviews
+* Security & architecture walkthroughs
+
+---
+
+### 📚 Documentation Index
+
+* Architecture: [`docs/architecture.md`](docs/architecture.md)
+* Authentication: [`docs/authentication.md`](docs/authentication.md)
+* Streaming: [`docs/streaming.md`](docs/streaming.md)
+* Database: [`docs/database.md`](docs/database.md)
+* API: [`docs/api.md`](docs/api.md)
+
+---
 
 ## 🚀 Future Improvements
 
-* Extract audio-streaming into a dedicated microservice
+* Extract streaming into a dedicated service
 * Add caching for audio metadata
-* Event-driven progress tracking
+* Event-driven progress updates
 * CI/CD pipeline
+* Optimistic locking on progress updates
+
+---
 
 ## 📅 Development Plan
 
-- Step 1: System design (ERD, DB schema, API contract)
-- Step 2: Authentication & Security
-- Step 3: Audio management
-- Step 4: Audio streaming
-- Step 5: Library
-- Step 6: Resume listening
-- Step 7: Search
-- Step 8: Deployment
+The project was developed incrementally in the following order:
 
-
+1. System design (ERD, schema, API contracts)
+2. Authentication & security
+3. Audio management
+4. Audio streaming
+5. User library
+6. Resume listening
+7. Search
+8. Deployment
