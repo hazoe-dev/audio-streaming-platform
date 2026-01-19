@@ -1,6 +1,6 @@
 # 🎵 Audio Streaming Design
 
-This document describes how audio streaming is implemented in the Audio Streaming Platform backend, with a focus on **HTTP Range–based streaming**, security boundaries, and performance considerations.
+This document describes how audio streaming is implemented in the Audio Streaming Platform backend, focusing on **HTTP Range–based streaming**, **security enforcement**, and **clean responsibility separation**.
 
 ---
 
@@ -8,14 +8,27 @@ This document describes how audio streaming is implemented in the Audio Streamin
 
 Audio playback is implemented using **HTTP Range Requests**, allowing clients to request specific byte ranges of audio files.
 
-This design enables:
+All streaming requests are routed **through the backend**, ensuring:
 
-* Progressive playback
-* Seeking within audio
-* Resume listening
-* Efficient bandwidth usage
+* Proper **JWT authentication**
+* **Premium access enforcement**
+* Safe and controlled byte streaming
 
-The backend remains **format-agnostic** and streams raw bytes without decoding audio data.
+The backend remains **audio-format agnostic** and streams raw bytes without decoding or transcoding.
+
+---
+
+## 🎯 Design Goals
+
+This streaming design aims to:
+
+* Enforce **authentication & premium access**
+* Support **HTTP range-based streaming**
+* Clearly separate:
+
+   * Security concerns
+   * Streaming logic
+   * Storage access
 
 ---
 
@@ -33,41 +46,107 @@ Meaning:
 
 > “Send the audio starting from byte 1,000,000 until the end.”
 
-The server responds with **partial content** instead of the full file.
+This enables:
+
+* Progressive playback
+* Seeking
+* Resume listening
+* Efficient bandwidth usage
 
 ---
 
-## 🔄 Streaming Request Flow
+## 🔄 High-level Streaming Flow
+
+```text
+Client (Browser / Mobile Player)
+    |
+    | GET /api/audios/{id}/stream
+    | Authorization: Bearer <JWT>
+    | Range: bytes=...
+    |
+    v
+Spring Security Filter Chain
+    |
+    |-- JwtAuthenticationFilter
+    |     - Parse JWT
+    |     - Set SecurityContext
+    |
+    v
+AudioController
+    |
+    |-- Validate audio exists
+    |-- Validate premium access
+    |
+    v
+AudioService
+    |
+    |-- Resolve audio_path
+    |-- Validate file exists
+    |
+    v
+StreamingService
+    |
+    |-- Parse Range header
+    |-- Stream requested byte range
+    |
+    v
+Storage (File System / Object Storage)
+    |
+    v
+HTTP 206 Partial Content
+```
+
+---
+
+## 🔍 Detailed Request Sequence
 
 ```text
 Client
   |
-  | 1. GET /api/audios/{id}/stream
-  |    Authorization: Bearer <ACCESS_TOKEN>
-  |    Range: bytes=...
+  |--- GET /api/audios/{id}/stream
+  |     Range: bytes=5000000-8000000
+  |     Authorization: Bearer <JWT>
+  |
+  v
+JwtAuthenticationFilter
+  |
+  |-- JWT valid?
+  |     NO → 401 Unauthorized
+  |     YES → set SecurityContext
   |
   v
 AudioController
   |
-  | 2. Resolve audio metadata
-  | 3. Validate access (FREE vs PREMIUM)
+  |-- Load audio metadata
+  |-- is_premium?
+  |     |
+  |     |-- Not authenticated → 401
+  |     |-- Not premium       → 403
+  |
+  v
+AudioService
+  |
+  |-- Resolve audio_path
   |
   v
 StreamingService
   |
-  | 4. Parse Range header
-  | 5. Validate byte range
-  | 6. Stream requested bytes
+  |-- Parse Range header
+  |-- Calculate start / end bytes
+  |-- Stream partial content
   |
   v
-Client
+HTTP Response
+      Status: 206 Partial Content
+      Content-Range: bytes 5000000-8000000/52428800
+      Content-Type: audio/mpeg
 ```
 
 ---
 
 ## 📤 Response Semantics
 
-### Successful Partial Content Response
+### Partial Content Response
 
 ```http
 HTTP/1.1 206 Partial Content
@@ -78,8 +157,6 @@ Content-Type: audio/mpeg
 ```
 
 ### Full Content (No Range Header)
-
-If no `Range` header is provided:
 
 ```http
 HTTP/1.1 200 OK
@@ -92,20 +169,20 @@ Content-Type: audio/mpeg
 
 ## ⚠️ Invalid Range Handling
 
-If the client requests an invalid byte range:
+If the requested range is invalid:
 
 ```http
 Range: bytes=999999999-
 ```
 
-Server responds:
+Response:
 
 ```http
 HTTP/1.1 416 Range Not Satisfiable
 Content-Range: bytes */5000000
 ```
 
-This behavior follows the HTTP specification and prevents undefined behavior.
+This strictly follows the HTTP specification.
 
 ---
 
@@ -114,18 +191,15 @@ This behavior follows the HTTP specification and prevents undefined behavior.
 ### Resume Flow
 
 1. Client stores last playback position in **seconds**
-2. On resume:
-
-    * Client converts seconds → byte offset
-    * Sends new `Range` request
-3. Server streams from requested offset
+2. Client converts seconds → byte offset
+3. Client issues a new Range request:
 
 ```http
 Range: bytes=XYZ-
 ```
 
-> The backend does not convert time to bytes.
-> This responsibility is intentionally kept on the client.
+> The backend does **not** convert time to bytes.
+> This responsibility is intentionally kept on the client to avoid format-specific logic.
 
 ---
 
@@ -133,121 +207,85 @@ Range: bytes=XYZ-
 
 ### Authorization Before Streaming
 
-Access validation occurs **before any bytes are streamed**:
-
-* FREE users cannot access premium audio
+* JWT authentication occurs in the **Spring Security filter chain**
+* Premium access is validated **before any bytes are streamed**
 * Unauthorized requests are rejected early
 
 This prevents:
 
 * Partial data leakage
-* Unauthorized bandwidth usage
+* Unauthorized bandwidth consumption
 
 ---
 
 ## 🧱 Responsibility Separation
 
-| Component          | Responsibility                 |
-| ------------------ | ------------------------------ |
-| `AudioController`  | HTTP request handling          |
-| `AudioService`     | Metadata & access validation   |
-| `StreamingService` | Range parsing & byte streaming |
+| Component                 | Responsibility                      |
+| ------------------------- | ----------------------------------- |
+| `JwtAuthenticationFilter` | Authentication & SecurityContext    |
+| `AudioController`         | Request validation & access control |
+| `AudioService`            | Metadata & storage path resolution  |
+| `StreamingService`        | Range parsing & byte streaming      |
 
-Business rules are isolated from I/O operations.
+Business rules are fully isolated from low-level I/O operations.
 
 ---
 
-## 📦 Streaming Implementation Strategy
+## 📦 Storage Abstraction
 
-### Storage
+Streaming logic is independent of storage implementation:
 
-Audio files are accessed via:
-
-* Local filesystem (development)
+* Local filesystem (current)
 * Object storage (e.g. S3) in future iterations
 
-Streaming logic is abstracted from storage backend.
+No domain logic changes are required when switching storage backends.
 
 ---
 
-### I/O Model
+## ❌ Error Handling Behavior
 
-* Uses **streaming responses**
-* Avoids loading entire files into memory
-* Streams byte ranges incrementally
+| Scenario                 | Response                    |
+| ------------------------ | --------------------------- |
+| Audio not found          | `404 Not Found`             |
+| No JWT for premium audio | `401 Unauthorized`          |
+| Non-premium user         | `403 Forbidden`             |
+| Invalid Range header     | `416 Range Not Satisfiable` |
 
-This ensures:
-
-* Low memory footprint
-* High concurrency support
+👉 This table is **interview gold**.
 
 ---
 
 ## 🚀 Performance Considerations
 
-* Streaming is **read-only**
+* Streaming is read-only
 * No database access during byte transfer
-* Metadata lookup happens once per request
-* Supports large audio files efficiently
-
----
-
-## ⚠️ Common Pitfalls (Avoided)
-
-| Pitfall                            | Mitigation       |
-| ---------------------------------- | ---------------- |
-| Loading full file into memory      | Stream in chunks |
-| Authorizing after streaming starts | Authorize first  |
-| Ignoring invalid ranges            | Return 416       |
-| Tying streaming to audio format    | Stream raw bytes |
+* Metadata is resolved once per request
+* Streams data in chunks (low memory footprint)
+* Supports large audio files and high concurrency
 
 ---
 
 ## 🧠 Design Trade-offs
 
+### Why stream through backend instead of direct storage access?
+
+> “Streaming through the backend allows us to enforce authentication and premium access consistently, while still supporting efficient HTTP range-based streaming.”
+
 ### Why HTTP Range instead of WebSockets?
 
-* HTTP is cache-friendly
-* Works with browsers natively
+* Native browser support
+* Cache & CDN friendly
 * Simpler infrastructure
-* Better CDN compatibility
+* Protocol-standard for media delivery
 
 ---
 
-### Why not server-side time-based streaming?
+## 📎 Summary
 
-* Audio formats vary
-* Bitrate can be variable
-* Byte-based streaming is protocol-standard
+Audio streaming is implemented using HTTP range requests.
+Each request passes through the security filter chain, where JWT authentication and premium access are enforced.
+The backend streams partial audio content from storage and returns `206 Partial Content`, enabling efficient playback and seeking without downloading the entire file.
 
----
-
-## 🔍 Observability (Future)
-
-Planned improvements:
-
-* Streaming metrics (bytes sent, duration)
-* Slow-client detection
-* Bandwidth throttling
 
 ---
 
-## 📎 Notes for Interview Discussion
-
-Key talking points:
-
-* `206 Partial Content`
-* Byte-range semantics
-* Resume via client-side conversion
-* Security before streaming
-* Separation of I/O and business logic
-
----
-
-## 🔗 Related Documents
-
-* [Authentication & Authorization](authentication.md)
-* [Architecture Overview](architecture.md)
-* [Database Schema](database.md)
-
----

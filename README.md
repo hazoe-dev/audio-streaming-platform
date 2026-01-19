@@ -170,10 +170,11 @@ erDiagram
 * title
 * description
 * duration_seconds
-* audio_url
-* cover_url
+* audio_path
+* cover_path
 * is_premium
 * search_vector (tsvector)
+* owner_id (FK → User.id)
 * created_at
 
 ### Library Item

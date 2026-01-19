@@ -183,6 +183,7 @@ GET /api/audios
   "total": 20
 }
 ```
+This endpoint returns metadata only and does not expose audio paths or URLs.
 
 ---
 
@@ -204,6 +205,7 @@ GET /api/audios/{id}
   "isPremium": false
 }
 ```
+coverUrl is resolved by the backend from the stored cover_path.
 
 ---
 
@@ -212,6 +214,8 @@ GET /api/audios/{id}
 ```
 GET /api/audios/{id}/stream
 ```
+This endpoint supports HTTP range requests for efficient streaming and seeking.
+Access control is enforced before streaming.
 
 **Headers**
 

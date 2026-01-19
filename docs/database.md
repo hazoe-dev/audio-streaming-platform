@@ -102,19 +102,23 @@ CREATE TABLE audio (
     title VARCHAR(255) NOT NULL,
     description TEXT,
     duration_seconds INT NOT NULL,
-    audio_url TEXT NOT NULL,
-    cover_url TEXT,
+    audio_path TEXT NOT NULL,
+    cover_path TEXT,
     is_premium BOOLEAN NOT NULL DEFAULT FALSE,
     search_vector tsvector,
-    created_at TIMESTAMP NOT NULL DEFAULT now()
+    user_id BIGINT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT now(),
+    CONSTRAINT fk_audio_user
+        FOREIGN KEY (user_id) REFERENCES users(id)
 );
+
 ```
 
 **Notes:**
 
-* Audio binaries are stored externally (object storage / CDN)
-* Database stores metadata only
-* `search_vector` supports PostgreSQL full-text search
+- Audio binaries are stored externally (file system or object storage).
+- The database stores metadata only, enabling efficient streaming and scaling.
+- `search_vector` is used to support PostgreSQL full-text search.
 
 ---
 
