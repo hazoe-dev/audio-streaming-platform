@@ -4,7 +4,6 @@ This document describes the database design for the **Audio Streaming Platform**
 
 The system uses **PostgreSQL** as its primary datastore and **JPA (Hibernate)** as the ORM layer, with **Flyway** for schema migrations.
 
----
 
 ## 1. Design Principles
 
@@ -18,7 +17,6 @@ The database design follows these principles:
 
 The database acts strictly as a **persistence layer**, not a business logic layer.
 
----
 
 ## 2. Primary Key Strategy
 
@@ -48,7 +46,6 @@ id BIGINT GENERATED ALWAYS AS IDENTITY
 ID lifecycle management is owned by the ORM.
 The database does **not** contain business logic related to ID generation.
 
----
 
 ## 3. Entity Relationship Overview (ERD)
 
@@ -66,7 +63,6 @@ erDiagram
 * Ownership relationships are modeled explicitly
 * One `(user, audio)` pair maps to one library item and one progress record
 
----
 
 ## 4. Table Definitions
 
@@ -90,7 +86,6 @@ CREATE TABLE users (
 * `role` is stored as `VARCHAR` to align with `EnumType.STRING`
 * No personal data beyond authentication requirements
 
----
 
 ### 4.2 Audio
 
@@ -120,7 +115,6 @@ CREATE TABLE audio (
 - The database stores metadata only, enabling efficient streaming and scaling.
 - `search_vector` is used to support PostgreSQL full-text search.
 
----
 
 ### 4.3 Library Item
 
@@ -145,7 +139,6 @@ CREATE TABLE library_item (
 * Designed as a domain entity, not a bare join table
 * Can be extended with additional metadata in the future
 
----
 
 ### 4.4 Listening Progress
 
@@ -170,7 +163,6 @@ CREATE TABLE listening_progress (
 * Updated frequently during playback
 * Enables accurate resume functionality
 
----
 
 ### 4.5 Refresh Tokens
 
@@ -193,7 +185,6 @@ CREATE TABLE refresh_tokens (
 * Enables revocation and reuse detection
 * Tokens are rotated on every refresh request
 
----
 
 ## 5. Indexing Strategy
 
@@ -218,7 +209,6 @@ Indexes are defined via:
 * JPA annotations, or
 * Flyway migrations where necessary
 
----
 
 ## 6. Full-Text Search
 
@@ -235,7 +225,6 @@ The application layer is responsible for:
 
 No database triggers are used to avoid hidden behavior.
 
----
 
 ## 7. ORM & Migration Strategy
 
@@ -254,7 +243,6 @@ No database triggers are used to avoid hidden behavior.
 
 Production schema is always reproducible from migrations.
 
----
 
 ## 8. Trade-offs & Decisions
 
@@ -266,7 +254,6 @@ Production schema is always reproducible from migrations.
 | No audio blobs in database | Requires external storage       |
 | Anemic domain model        | Easier evolution, less coupling |
 
----
 
 ## 9. Summary
 
@@ -280,5 +267,4 @@ Production schema is always reproducible from migrations.
 
 This design prioritizes **clarity, correctness, and long-term maintainability**, while remaining **interview-ready**.
 
----
 

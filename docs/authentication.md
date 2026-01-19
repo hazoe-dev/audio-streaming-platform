@@ -9,7 +9,6 @@ The design prioritizes:
 * Scalability
 * Interview-ready clarity
 
----
 
 ## 📌 Overview
 
@@ -29,7 +28,6 @@ The system uses a **JWT-based authentication model** with a hybrid approach:
 
 This approach balances **performance** (stateless access tokens) with **security** (revocable refresh tokens).
 
----
 
 ## 🧠 Core Concepts
 
@@ -44,7 +42,6 @@ Two types of JWTs are used:
 
 Token type is explicitly stored using the `typ` claim to prevent misuse.
 
----
 
 ## 🔑 JWT Claims Design
 
@@ -69,7 +66,6 @@ Token type is explicitly stored using the `typ` claim to prevent misuse.
 * `issuer` → issuer validation
 * No sensitive data is stored in tokens
 
----
 
 ### Refresh Token Payload
 
@@ -89,7 +85,6 @@ Token type is explicitly stored using the `typ` claim to prevent misuse.
 * Longer expiration
 * Accepted only by refresh endpoint
 
----
 
 ## 🔐 Authentication Flow (Login)
 
@@ -122,7 +117,6 @@ Client receives:
 * `accessToken`
 * `refreshToken`
 
----
 
 ## 🔁 Refresh Token Flow (Rotation)
 
@@ -159,7 +153,6 @@ Client
 * Enables token revocation
 * Detects suspicious reuse
 
----
 
 ## 🔎 Request Authentication Lifecycle
 
@@ -202,7 +195,6 @@ SecurityFilterChain
     |     → NO  → 403 Forbidden
 ```
 
----
 
 ## 🛡️ Authorization Model
 
@@ -221,7 +213,6 @@ Authorization is enforced at:
 
 > Business authorization is validated **before streaming begins** to prevent partial data leakage.
 
----
 
 ## 🗄️ Refresh Token Persistence
 
@@ -244,7 +235,6 @@ refresh_tokens
 
 Multiple refresh tokens per user are allowed to support multiple devices.
 
----
 
 ## ⚠️ Failure Scenarios & Responses
 
@@ -256,7 +246,6 @@ Multiple refresh tokens per user are allowed to support multiple devices.
 | Invalid refresh token          | 401 Unauthorized          |
 | Reused refresh token           | 401 Unauthorized + revoke |
 
----
 
 ## 🔐 Security Design Decisions
 
@@ -269,7 +258,6 @@ Multiple refresh tokens per user are allowed to support multiple devices.
 | Token type enforcement      | Prevent token misuse    |
 | Role stored in access token | Avoid DB lookup         |
 
----
 
 ## 🧠 Design Trade-offs
 
@@ -286,7 +274,6 @@ Multiple refresh tokens per user are allowed to support multiple devices.
 
 👉 Hybrid model provides the best balance.
 
----
 
 ## 📎 Notes for Interview Discussion
 
@@ -297,7 +284,6 @@ Key talking points:
 * Authorization before streaming
 * Multi-device refresh token support
 
----
 
 ## 🔗 Related Documents
 
@@ -305,4 +291,3 @@ Key talking points:
 * [Audio Streaming Design](streaming.md)
 * [Database Schema](database.md)
 
----

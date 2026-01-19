@@ -2,7 +2,6 @@
 
 This document describes how audio streaming is implemented in the Audio Streaming Platform backend, focusing on **HTTP Range–based streaming**, **security enforcement**, and **clean responsibility separation**.
 
----
 
 ## 📌 Overview
 
@@ -16,7 +15,6 @@ All streaming requests are routed **through the backend**, ensuring:
 
 The backend remains **audio-format agnostic** and streams raw bytes without decoding or transcoding.
 
----
 
 ## 🎯 Design Goals
 
@@ -30,7 +28,6 @@ This streaming design aims to:
    * Streaming logic
    * Storage access
 
----
 
 ## 🧠 Key Concepts
 
@@ -53,7 +50,6 @@ This enables:
 * Resume listening
 * Efficient bandwidth usage
 
----
 
 ## 🔄 High-level Streaming Flow
 
@@ -96,7 +92,6 @@ Storage (File System / Object Storage)
 HTTP 206 Partial Content
 ```
 
----
 
 ## 🔍 Detailed Request Sequence
 
@@ -142,7 +137,6 @@ HTTP Response
       Content-Type: audio/mpeg
 ```
 
----
 
 ## 📤 Response Semantics
 
@@ -165,7 +159,6 @@ Content-Length: 5000000
 Content-Type: audio/mpeg
 ```
 
----
 
 ## ⚠️ Invalid Range Handling
 
@@ -184,7 +177,6 @@ Content-Range: bytes */5000000
 
 This strictly follows the HTTP specification.
 
----
 
 ## ⏯️ Seek & Resume Listening
 
@@ -201,7 +193,6 @@ Range: bytes=XYZ-
 > The backend does **not** convert time to bytes.
 > This responsibility is intentionally kept on the client to avoid format-specific logic.
 
----
 
 ## 🛡️ Security Boundary
 
@@ -216,7 +207,6 @@ This prevents:
 * Partial data leakage
 * Unauthorized bandwidth consumption
 
----
 
 ## 🧱 Responsibility Separation
 
@@ -229,7 +219,6 @@ This prevents:
 
 Business rules are fully isolated from low-level I/O operations.
 
----
 
 ## 📦 Storage Abstraction
 
@@ -240,7 +229,6 @@ Streaming logic is independent of storage implementation:
 
 No domain logic changes are required when switching storage backends.
 
----
 
 ## ❌ Error Handling Behavior
 
@@ -253,7 +241,6 @@ No domain logic changes are required when switching storage backends.
 
 👉 This table is **interview gold**.
 
----
 
 ## 🚀 Performance Considerations
 
@@ -263,7 +250,6 @@ No domain logic changes are required when switching storage backends.
 * Streams data in chunks (low memory footprint)
 * Supports large audio files and high concurrency
 
----
 
 ## 🧠 Design Trade-offs
 
@@ -278,7 +264,6 @@ No domain logic changes are required when switching storage backends.
 * Simpler infrastructure
 * Protocol-standard for media delivery
 
----
 
 ## 📎 Summary
 
@@ -287,5 +272,4 @@ Each request passes through the security filter chain, where JWT authentication 
 The backend streams partial audio content from storage and returns `206 Partial Content`, enabling efficient playback and seeking without downloading the entire file.
 
 
----
 

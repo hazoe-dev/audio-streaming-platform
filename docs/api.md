@@ -15,7 +15,6 @@ All endpoints are prefixed with:
 /api
 ```
 
----
 
 ## 1. API Conventions
 
@@ -42,7 +41,6 @@ Error responses follow a common structure:
 }
 ```
 
----
 
 ### 1.3 Authentication
 
@@ -59,7 +57,6 @@ Authorization: Bearer <access_token>
 Detailed authentication flows are documented in
 ➡️ [`docs/authentication.md`](authentication.md)
 
----
 
 ## 2. Authentication API
 
@@ -94,7 +91,6 @@ POST /api/auth/register
 | 400    | Validation error     |
 | 409    | Email already exists |
 
----
 
 ### 2.2 Login
 
@@ -120,7 +116,6 @@ POST /api/auth/login
 }
 ```
 
----
 
 ### 2.3 Refresh Token
 
@@ -151,7 +146,6 @@ POST /api/auth/refresh
 | ------ | -------------------------------- |
 | 401    | Invalid or expired refresh token |
 
----
 
 ## 3. Audio API
 
@@ -185,7 +179,6 @@ GET /api/audios
 ```
 This endpoint returns metadata only and does not expose audio paths or URLs.
 
----
 
 ### 3.2 Get Audio Details
 
@@ -207,7 +200,6 @@ GET /api/audios/{id}
 ```
 coverUrl is resolved by the backend from the stored cover_path.
 
----
 
 ### 3.3 Stream Audio (HTTP Range)
 
@@ -232,7 +224,6 @@ Range: bytes=0-1048575
 Streaming details are documented in  
 ➡️ [`docs/streaming.md`](streaming.md)
 
----
 
 ## 4. Library API
 
@@ -244,7 +235,6 @@ POST /api/library/{audioId}
 
 **Response – 204 No Content**
 
----
 
 ### 4.2 Remove Audio from Library
 
@@ -254,7 +244,6 @@ DELETE /api/library/{audioId}
 
 **Response – 204 No Content**
 
----
 
 ### 4.3 Get User Library
 
@@ -274,7 +263,6 @@ GET /api/library
 ]
 ```
 
----
 
 ## 5. Listening Progress API
 
@@ -295,7 +283,6 @@ POST /api/progress
 
 **Response – 204 No Content**
 
----
 
 ### 5.2 Get Listening Progress
 
@@ -312,7 +299,6 @@ GET /api/progress/{audioId}
 }
 ```
 
----
 
 ## 6. Search API
 
@@ -334,8 +320,6 @@ GET /api/search?keyword=focus
 ]
 ```
 
----
-
 ## 7. HTTP Status Codes
 
 | Status | Meaning               |
@@ -350,7 +334,6 @@ GET /api/search?keyword=focus
 | 409    | Conflict              |
 | 500    | Internal Server Error |
 
----
 
 ## 8. Versioning Strategy
 
@@ -358,7 +341,6 @@ GET /api/search?keyword=focus
 * Breaking changes require a new version (`/api/v2`)
 * Backward compatibility preserved where possible
 
----
 
 ## 9. Summary
 
@@ -370,4 +352,3 @@ GET /api/search?keyword=focus
 
 This API contract is **frozen** for the current project scope.
 
----

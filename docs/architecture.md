@@ -2,7 +2,6 @@
 
 This document describes the architectural design of the Audio Streaming Platform backend, including structural decisions, module boundaries, and scalability considerations.
 
----
 
 ## 📌 Architectural Style
 
@@ -17,7 +16,6 @@ The system is implemented as a **Modular Monolith**:
 
 This approach balances **simplicity**, **transactional consistency**, and **development velocity**, while preserving a clear path to future microservice extraction.
 
----
 
 ## 🎯 Why Modular Monolith?
 
@@ -41,7 +39,6 @@ This approach balances **simplicity**, **transactional consistency**, and **deve
 
 > Microservices are a future consideration once scale and organizational complexity demand it.
 
----
 
 ## 📦 Module Boundaries (Bounded Contexts)
 
@@ -59,7 +56,6 @@ Each top-level package represents a **bounded context** with its own responsibil
 
 Modules communicate via **service interfaces**, not repositories or entities.
 
----
 
 ## 🧱 Layered Structure (Inside Each Module)
 
@@ -84,7 +80,6 @@ This enforces:
 * Testable business logic
 * Framework isolation
 
----
 
 ## 🧠 Domain Model Design
 
@@ -96,7 +91,6 @@ This enforces:
 
 > The domain model can evolve toward richer behavior as business rules grow.
 
----
 
 ### Domain & Persistence Coupling
 
@@ -110,7 +104,6 @@ Domain entities are implemented as **JPA entities**.
 
 Framework-specific concerns are kept out of domain logic.
 
----
 
 ## 🔐 Security Architecture
 
@@ -122,7 +115,6 @@ Framework-specific concerns are kept out of domain logic.
 
 Authentication is resolved **once** at the filter layer.
 
----
 
 ### Authorization
 
@@ -133,7 +125,6 @@ Authorization is enforced at:
 
 > Security decisions are validated before streaming or other I/O operations.
 
----
 
 ## 🎵 Streaming Architecture
 
@@ -151,7 +142,6 @@ Streaming is:
 * Read-only
 * Isolated from business logic
 
----
 
 ## 🔍 Search Architecture
 
@@ -163,7 +153,6 @@ Search is implemented using:
 
 This avoids introducing Elasticsearch prematurely while meeting current requirements.
 
----
 
 ## 🗄️ Data Architecture
 
@@ -174,7 +163,6 @@ This avoids introducing Elasticsearch prematurely while meeting current requirem
 
 > The database acts as the system of record.
 
----
 
 ## ⚙️ Configuration & Cross-Cutting Concerns
 
@@ -188,7 +176,6 @@ Contains:
 
 This avoids duplication across modules.
 
----
 
 ## 🚀 Scalability & Evolution Strategy
 
@@ -202,7 +189,6 @@ The architecture supports gradual evolution:
 4. Event-driven progress updates
 5. Move toward microservices if required
 
----
 
 ## 🔄 Transaction Strategy
 
@@ -212,7 +198,6 @@ The architecture supports gradual evolution:
 
 This ensures consistency without distributed complexity.
 
----
 
 ## 🧠 Trade-offs & Constraints
 
@@ -225,7 +210,6 @@ This ensures consistency without distributed complexity.
 
 All trade-offs are intentional and documented.
 
----
 
 ## 📎 Notes for Interview Discussion
 
@@ -237,7 +221,6 @@ Strong talking points:
 * Evolution path to microservices
 * Avoiding premature optimization
 
----
 
 ## 🔗 Related Documents
 
@@ -245,4 +228,3 @@ Strong talking points:
 * [Audio Streaming Design](streaming.md)
 * [Database Schema](database.md)
 
----

@@ -5,7 +5,6 @@ This project is intentionally designed as a **system design & backend engineerin
 
 > **Goal:** demonstrate clean backend architecture, security design, and streaming fundamentals in an interview-ready format.
 
----
 
 ## 📌 Project Overview
 
@@ -20,7 +19,6 @@ This project implements the core backend capabilities of an audio streaming plat
 
 The system is implemented as a **modular monolith**, emphasizing clear boundaries and future scalability.
 
----
 
 ## 🎯 Project Goals
 
@@ -31,7 +29,6 @@ The system is implemented as a **modular monolith**, emphasizing clear boundarie
 * Maintain **clean separation of responsibilities**
 * Be **interview-ready** in both design and documentation
 
----
 
 ## ❌ Non-Goals (Out of Scope)
 
@@ -43,7 +40,6 @@ The following are intentionally excluded to keep the scope focused:
 * Recommendation system
 * Microservice deployment (future consideration only)
 
----
 
 ## 🧩 Core Features
 
@@ -76,7 +72,6 @@ The following are intentionally excluded to keep the scope focused:
 
   * PostgreSQL full-text search using `tsvector`
 
----
 
 ## 🏗️ Architecture
 
@@ -107,7 +102,6 @@ PostgreSQL
 ➡️ **Detailed architecture decisions, module boundaries, and design rationale:**  
 ➡️ See [docs/architecture.md](docs/architecture.md)
 
----
 
 ## 📦 Package Structure (High-Level)
 
@@ -128,7 +122,6 @@ dev.hazoe.audiostreaming
 > Each module internally follows a layered structure
 > (`controller / service / domain / repository`).
 
----
 
 ## 🧠 Domain Model Philosophy
 
@@ -140,7 +133,6 @@ Domain entities are implemented as **JPA entities** and represent persistence st
 
 > This is a conscious trade-off to avoid duplicate models and unnecessary abstraction.
 
----
 
 ## 🧠 Domain Model (ERD)
 
@@ -152,7 +144,6 @@ erDiagram
   AUDIO ||--o{ LISTENING_PROGRESS : tracked_in
 ```
 
----
 
 ## 🗄️ Database Schema
 
@@ -202,7 +193,6 @@ erDiagram
 * expires_at
 * created_at
 
----
 
 ## 🗄️ Database Design (Overview)
 
@@ -214,7 +204,6 @@ erDiagram
 
 ➡️ See [docs/database.md](docs/database.md) for full schema and design rationale.
 
----
 
 ## 🔌 API Contract (Frozen Scope)
 
@@ -264,7 +253,6 @@ GET /api/search?keyword=sony
 
 ➡️ Full API details: [docs/api.md](docs/api.md)
 
----
 
 ## 🔐 Authentication & Security (Overview)
 
@@ -275,7 +263,6 @@ GET /api/search?keyword=sony
 
 ➡️ See [docs/authentication.md](docs/authentication.md) for detailed flows.
 
----
 
 ## 🎵 Audio Streaming Design
 
@@ -287,7 +274,6 @@ GET /api/search?keyword=sony
 ➡️ **Streaming flow & HTTP semantics:**  
 ➡️ See [docs/streaming.md](docs/streaming.md)
 
----
 
 ## 🔍 Search Design
 
@@ -297,7 +283,6 @@ GET /api/search?keyword=sony
 
 > Search is intentionally kept inside PostgreSQL to avoid premature Elasticsearch complexity.
 
----
 
 ## 📎 Notes
 
@@ -308,7 +293,6 @@ It is a **backend engineering portfolio piece**, optimized for:
 * System design interviews
 * Security & architecture walkthroughs
 
----
 
 ### 📚 Documentation Index
 
@@ -318,7 +302,6 @@ It is a **backend engineering portfolio piece**, optimized for:
 * Database: [`docs/database.md`](docs/database.md)
 * API: [`docs/api.md`](docs/api.md)
 
----
 
 ## 🚀 Future Improvements
 
@@ -328,7 +311,6 @@ It is a **backend engineering portfolio piece**, optimized for:
 * CI/CD pipeline
 * Optimistic locking on progress updates
 
----
 
 ## 📅 Development Plan
 
