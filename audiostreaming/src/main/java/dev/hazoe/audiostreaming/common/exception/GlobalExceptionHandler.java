@@ -87,6 +87,19 @@ public class GlobalExceptionHandler {
                 ));
     }
 
+    /* ================= 404 ================= */
+
+    @ExceptionHandler(AudioNotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleAudioNotFound(AudioNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ApiErrorResponse(
+                        404,
+                        "AUDIO_NOT_FOUND",
+                        ex.getMessage(),
+                        Instant.now()
+                ));
+    }
+
     /* ================= 409 ================= */
 
     @ExceptionHandler(EmailAlreadyExistsException.class)
