@@ -17,21 +17,26 @@ public class AudioController {
     private final AudioService audioService;
 
     @GetMapping
-    public Page<AudioListItemDto> listAudios(
+    public ResponseEntity<Page<AudioListItemDto>> listAudios(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
-        return audioService.getAudios(
-                PageRequest.of(
-                        page,
-                        size,
-                        Sort.by("createdAt").descending())
-        );
+        return ResponseEntity
+                .ok()
+                .body(
+                        audioService.getAudios(
+                                PageRequest.of(
+                                        page,
+                                        size,
+                                        Sort.by("createdAt").descending())
+                        ));
     }
 
     @GetMapping("/{id}")
-    public AudioDetailDto getAudio(@PathVariable Long id) {
-        return audioService.getAudioDetail(id);
+    public ResponseEntity<AudioDetailDto> getAudio(@PathVariable Long id) {
+        return ResponseEntity
+                .ok()
+                .body(audioService.getAudioDetail(id));
     }
 }
 
