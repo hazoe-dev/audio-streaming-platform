@@ -11,7 +11,7 @@ public class AudioMapper {
 
     private final String cdnBaseUrl;
 
-    public AudioMapper(@Value("${app.cdn.base-url}") String cdnBaseUrl) {
+    public AudioMapper(@Value("${app.cdn.cover-base-url}") String cdnBaseUrl) {
         this.cdnBaseUrl = cdnBaseUrl;
     }
 

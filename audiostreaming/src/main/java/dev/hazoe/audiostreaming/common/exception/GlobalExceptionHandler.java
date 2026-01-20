@@ -130,4 +130,16 @@ public class GlobalExceptionHandler {
                         Instant.now()
                 ));
     }
+
+    @ExceptionHandler(AudioStorageException.class)
+    public ResponseEntity<ApiErrorResponse> handleStorage(AudioStorageException ex) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiErrorResponse(
+                        500,
+                        "AUDIO_STORAGE_ERROR",
+                        ex.getMessage(),
+                        Instant.now()
+                ));
+    }
+
 }

@@ -25,5 +25,6 @@ security:
 
 app:
   cdn:
-    base-url: http://localhost:8080
+    cover-base-url: http://localhost:8080
+    audio-base-url: ./storage
 

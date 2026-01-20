@@ -22,6 +22,20 @@ values (1,
         'audio/2026/01/mindful_focus.mp3',
         'cover/2026/01/mindful_focus.png',
         false,
-        1,
+        3,
         '2026-01-19 16:42:14.636025 +00:00'
+       );
+
+insert into audio (id,title, description, duration_seconds,
+                   audio_path, cover_path, is_premium, owner_id,
+                   created_at)
+values (2,
+        'Brain On',
+        'Practice your brain on work',
+        32,
+        'audio/2026/01/brain_on.mp3',
+        'cover/2026/01/brain_on.png',
+        false,
+        4,
+        '2026-01-20 16:42:14.636025 +00:00'
        );
