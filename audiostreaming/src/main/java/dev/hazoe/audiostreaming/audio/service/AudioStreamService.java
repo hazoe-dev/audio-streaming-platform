@@ -5,6 +5,8 @@ import dev.hazoe.audiostreaming.audio.domain.Audio;
 import dev.hazoe.audiostreaming.audio.dto.AudioStreamResponse;
 import dev.hazoe.audiostreaming.audio.repository.AudioRepository;
 
+import dev.hazoe.audiostreaming.audio.streaming.ByteRange;
+import dev.hazoe.audiostreaming.audio.streaming.RangeResolver;
 import dev.hazoe.audiostreaming.common.exception.AudioNotFoundException;
 import dev.hazoe.audiostreaming.common.exception.AudioStorageException;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +31,9 @@ public class AudioStreamService {
 
     private final AudioRepository audioRepository;
 
+    private final RangeResolver rangeResolver =
+            new RangeResolver(DEFAULT_CHUNK_SIZE);
+
     @Value("${app.cdn.audio-base-url}")
     private String storageRoot;
 
@@ -45,18 +50,8 @@ public class AudioStreamService {
             throw new AudioStorageException("Audio file not accessible: " + path);
         }
 
-        // 3. Resolve content type
-        String contentType;
-        try {
-            contentType = Files.probeContentType(path);
-        } catch (IOException e) {
-            throw new AudioStorageException(
-                    "Failed to determine content type for: " + path, e
-            );
-        }
-        if (contentType == null) {
-            contentType = "audio/mpeg";
-        }
+        // 3. Get content type
+        String contentType = audio.getContentType();
 
         long fileSize;
         try {
@@ -66,52 +61,27 @@ public class AudioStreamService {
         }
 
         // 4. Parse Range
-        long start = 0;
-        long end = fileSize - 1;
-        boolean isPartial = false;
-
-        if (rangeHeader != null && rangeHeader.startsWith("bytes=")) {
-            isPartial = true;
-
-            String[] ranges = rangeHeader.substring(6).split("-");
-            try {
-                start = Long.parseLong(ranges[0]);
-
-                if (ranges.length > 1 && !ranges[1].isBlank()) {
-                    end = Long.parseLong(ranges[1]);
-                } else {
-                    end = Math.min(start + DEFAULT_CHUNK_SIZE - 1, fileSize - 1);
-                }
-            } catch (NumberFormatException ex) {
-                throw new AudioStorageException("Invalid Range header: " + rangeHeader);
-            }
-
-            if (start >= fileSize || end >= fileSize || start > end) {
-                throw new AudioStorageException("Invalid byte range: " + rangeHeader);
-            }
-        }
-
-        long contentLength = end - start + 1;
+        ByteRange result = rangeResolver.resolve(rangeHeader, fileSize);
 
         // 5. Build streaming resource
-        Resource resource = new InputStreamResource(openStream(path, start, contentLength));
+        Resource resource = new InputStreamResource(openStream(path, result.start(), result.contentLength()));
 
         // 6. Build headers
         HttpHeaders headers = new HttpHeaders();
         headers.set(HttpHeaders.ACCEPT_RANGES, "bytes");
-        headers.set(HttpHeaders.CONTENT_LENGTH, String.valueOf(contentLength));
+        headers.set(HttpHeaders.CONTENT_LENGTH, String.valueOf(result.contentLength()));
 
-        if (isPartial) {
+        if (result.isPartial()) {
             headers.set(
                     HttpHeaders.CONTENT_RANGE,
-                    "bytes " + start + "-" + end + "/" + fileSize
+                    "bytes " + result.start() + "-" + result.end() + "/" + fileSize
             );
         }
 
         return new AudioStreamResponse(
                 resource,
                 headers,
-                isPartial ? HttpStatus.PARTIAL_CONTENT : HttpStatus.OK,
+                result.isPartial() ? HttpStatus.PARTIAL_CONTENT : HttpStatus.OK,
                 contentType
         );
     }

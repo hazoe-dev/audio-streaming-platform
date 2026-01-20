@@ -5,6 +5,7 @@ import dev.hazoe.audiostreaming.audio.dto.AudioStreamResponse;
 import dev.hazoe.audiostreaming.audio.repository.AudioRepository;
 import dev.hazoe.audiostreaming.common.exception.AudioNotFoundException;
 import dev.hazoe.audiostreaming.common.exception.AudioStorageException;
+import dev.hazoe.audiostreaming.common.exception.RangeNotSatisfiableException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -75,6 +76,7 @@ class AudioStreamServiceTest {
         Audio audio = new Audio();
         audio.setId(1L);
         audio.setAudioPath("test.mp3");
+        audio.setContentType("audio/mpeg");
 
         given(audioRepository.findById(1L))
                 .willReturn(Optional.of(audio));
@@ -102,6 +104,7 @@ class AudioStreamServiceTest {
         Audio audio = new Audio();
         audio.setId(1L);
         audio.setAudioPath("test.mp3");
+        audio.setContentType("audio/mpeg");
 
         given(audioRepository.findById(1L))
                 .willReturn(Optional.of(audio));
@@ -144,7 +147,24 @@ class AudioStreamServiceTest {
     }
 
     @Test
-    void stream_invalidRange_throwsException() throws Exception {
+    void stream_invalidRange_throwsRangeNotSatisfiableException() throws Exception {
+        // given
+        Path audioFile = createTestAudioFile("test.mp3", 500);
+        Audio audio = new Audio();
+        audio.setId(1L);
+        audio.setAudioPath("test.mp3");
+
+        given(audioRepository.findById(1L))
+                .willReturn(Optional.of(audio));
+
+        // when / then
+        assertThatThrownBy(() ->
+                audioStreamService.stream(1L, "bytes=9999-10000")
+        ).isInstanceOf(RangeNotSatisfiableException.class);
+    }
+
+    @Test
+    void stream_invalidRangeSyntax_throwsRangeNotSatisfiableException() throws Exception {
         Path audioFile = createTestAudioFile("test.mp3", 500);
         Audio audio = new Audio();
         audio.setId(1L);
@@ -154,9 +174,8 @@ class AudioStreamServiceTest {
                 .willReturn(Optional.of(audio));
 
         assertThatThrownBy(() ->
-                audioStreamService.stream(1L, "bytes=9999-10000")
-        ).isInstanceOf(AudioStorageException.class)
-                .hasMessageContaining("Invalid byte range");
+                audioStreamService.stream(1L, "bytes=abc-def")
+        ).isInstanceOf(RangeNotSatisfiableException.class);
     }
 
 }

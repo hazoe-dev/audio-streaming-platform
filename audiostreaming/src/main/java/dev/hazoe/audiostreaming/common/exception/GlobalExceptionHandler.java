@@ -4,6 +4,7 @@ import dev.hazoe.audiostreaming.common.response.ApiErrorResponse;
 import dev.hazoe.audiostreaming.common.response.ValidationErrorResponse;
 import io.jsonwebtoken.JwtException;
 import jakarta.validation.ConstraintViolationException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -116,6 +117,26 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.CONFLICT)
                 .body(response);
+    }
+
+    /* ================= 416 ================= */
+
+    @ExceptionHandler(RangeNotSatisfiableException.class)
+    public ResponseEntity<Void> handleRangeNotSatisfiable(
+            RangeNotSatisfiableException ex
+    ) {
+        HttpHeaders headers = new HttpHeaders();
+
+        // RFC 7233 requires this
+        headers.set(
+                HttpHeaders.CONTENT_RANGE,
+                "bytes */" + ex.getFileSize()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE)
+                .headers(headers)
+                .build();// ⬅ NO BODY
     }
 
     /* ================= 500 ================= */
