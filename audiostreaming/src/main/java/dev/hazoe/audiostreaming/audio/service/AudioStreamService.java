@@ -39,25 +39,20 @@ public class AudioStreamService {
 
     public AudioStreamResponse stream(Long audioId, String rangeHeader) {
 
-        // 1. Load audio metadata
         Audio audio = audioRepository.findById(audioId)
                 .orElseThrow(() -> new AudioNotFoundException(audioId));
 
-        // 2. Validate storage
         Path path = Path.of(storageRoot, audio.getAudioPath());
         validateFile(path);
 
-        // 3. Get content type
         String contentType = audio.getContentType();
 
-        // 4. Parse Range
         long fileSize = getFileSize(path);
         ByteRange range = rangeResolver.resolve(rangeHeader, fileSize);
 
-        // 5. Build streaming resource
-        Resource resource = new InputStreamResource(openStream(path, range.start(), range.contentLength()));
+        Resource resource = new InputStreamResource(
+                openStream(path, range.start(), range.contentLength()));
 
-        // 6. Build headers
         HttpHeaders headers = buildHeaders(range, fileSize);
 
         return new AudioStreamResponse(
