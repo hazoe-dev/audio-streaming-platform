@@ -98,6 +98,7 @@ CREATE TABLE audio (
     description TEXT,
     duration_seconds INT NOT NULL,
     audio_path TEXT NOT NULL,
+    content_type VARCHAR(100) NOT NULL,
     cover_path TEXT,
     is_premium BOOLEAN NOT NULL DEFAULT FALSE,
     search_vector tsvector,
