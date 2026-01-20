@@ -21,7 +21,7 @@ public class AudioAuthorization {
                                             || a.getAuthority().equals("ROLE_ADMIN")
                             );
                 })
-                .orElse(false); //for service handles 404
+                .orElse(true); //for service handles 404
     }
 }
 
