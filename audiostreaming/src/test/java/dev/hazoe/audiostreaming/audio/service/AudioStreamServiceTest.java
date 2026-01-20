@@ -70,7 +70,7 @@ class AudioStreamServiceTest {
     }
 
     @Test
-    void stream_fullAudio_success() throws Exception {
+    void stream_fullAudio_shouldReturn200_andFullContent() throws Exception {
         // given
         Path audioFile = createTestAudioFile("test.mp3", 1024);
         Audio audio = new Audio();
@@ -98,7 +98,7 @@ class AudioStreamServiceTest {
     }
 
     @Test
-    void stream_partialAudio_success() throws Exception {
+    void stream_partialAudio_shouldReturn206_andPartialContent() throws Exception {
         // given
         Path audioFile = createTestAudioFile("test.mp3", 2000);
         Audio audio = new Audio();
@@ -122,7 +122,7 @@ class AudioStreamServiceTest {
     }
 
     @Test
-    void stream_audioNotFound_throwsException() {
+    void stream_audioNotFound_throwsAudioNotFoundException() {
         given(audioRepository.findById(1L))
                 .willReturn(Optional.empty());
 
@@ -132,7 +132,7 @@ class AudioStreamServiceTest {
     }
 
     @Test
-    void stream_fileNotExists_throwsException() {
+    void stream_fileNotExists_throwsAudioStorageException() {
         Audio audio = new Audio();
         audio.setId(1L);
         audio.setAudioPath("missing.mp3");
