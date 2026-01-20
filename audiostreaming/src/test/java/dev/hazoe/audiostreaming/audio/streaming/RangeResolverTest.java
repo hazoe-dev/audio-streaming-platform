@@ -26,7 +26,7 @@ class RangeResolverTest {
         assertEquals(0, range.start());
         assertEquals(FILE_SIZE - 1, range.end());
         assertEquals(FILE_SIZE, range.contentLength());
-        assertFalse(range.isPartial());
+        assertFalse(range.partial());
     }
 
     //Servers MUST ignore Range headers they do not understand.
@@ -38,7 +38,7 @@ class RangeResolverTest {
         assertEquals(0, range.start());
         assertEquals(FILE_SIZE - 1, range.end());
         assertEquals(FILE_SIZE, range.contentLength());
-        assertFalse(range.isPartial());
+        assertFalse(range.partial());
     }
 
     @Test
@@ -48,7 +48,7 @@ class RangeResolverTest {
         assertEquals(500, range.start());
         assertEquals(999, range.end());
         assertEquals(500, range.contentLength());
-        assertTrue(range.isPartial());
+        assertTrue(range.partial());
     }
 
     @Test
@@ -58,7 +58,7 @@ class RangeResolverTest {
         assertEquals(500, range.start());
         assertEquals(599, range.end()); // 500 + 100 - 1
         assertEquals(100, range.contentLength());
-        assertTrue(range.isPartial());
+        assertTrue(range.partial());
     }
 
     @Test
@@ -68,7 +68,7 @@ class RangeResolverTest {
         assertEquals(950, range.start());
         assertEquals(999, range.end());
         assertEquals(50, range.contentLength());
-        assertTrue(range.isPartial());
+        assertTrue(range.partial());
     }
 
     @Test
@@ -78,7 +78,7 @@ class RangeResolverTest {
         assertEquals(800, range.start());
         assertEquals(999, range.end());
         assertEquals(200, range.contentLength());
-        assertTrue(range.isPartial());
+        assertTrue(range.partial());
     }
 
     @Test

@@ -71,7 +71,7 @@ public class AudioStreamService {
         headers.set(HttpHeaders.ACCEPT_RANGES, "bytes");
         headers.set(HttpHeaders.CONTENT_LENGTH, String.valueOf(result.contentLength()));
 
-        if (result.isPartial()) {
+        if (result.partial()) {
             headers.set(
                     HttpHeaders.CONTENT_RANGE,
                     "bytes " + result.start() + "-" + result.end() + "/" + fileSize
@@ -81,7 +81,7 @@ public class AudioStreamService {
         return new AudioStreamResponse(
                 resource,
                 headers,
-                result.isPartial() ? HttpStatus.PARTIAL_CONTENT : HttpStatus.OK,
+                result.partial() ? HttpStatus.PARTIAL_CONTENT : HttpStatus.OK,
                 contentType
         );
     }

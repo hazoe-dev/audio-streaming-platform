@@ -4,5 +4,5 @@ public record ByteRange(
         long start,
         long end,
         long contentLength,
-        boolean isPartial
+        boolean partial
 ) {}
