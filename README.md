@@ -162,6 +162,7 @@ erDiagram
 * description
 * duration_seconds
 * audio_path
+* content_type
 * cover_path
 * is_premium
 * search_vector (tsvector)

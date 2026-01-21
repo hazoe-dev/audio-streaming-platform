@@ -11,6 +11,7 @@ import java.time.Instant;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Audio {
 
@@ -31,6 +32,9 @@ public class Audio {
     @Column(nullable = false)
     private String audioPath;
 
+    @Column(nullable = false, length = 100)
+    private String contentType ;
+
     private String coverPath;
 
     @Column(nullable = false)
@@ -45,6 +49,10 @@ public class Audio {
     @PrePersist
     void prePersist() {
         this.createdAt = Instant.now();
+
+        if (this.contentType == null) {
+            this.contentType = "audio/mpeg";
+        }
     }
 
 }

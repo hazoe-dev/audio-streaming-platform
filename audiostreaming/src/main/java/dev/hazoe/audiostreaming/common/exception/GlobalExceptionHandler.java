@@ -4,8 +4,10 @@ import dev.hazoe.audiostreaming.common.response.ApiErrorResponse;
 import dev.hazoe.audiostreaming.common.response.ValidationErrorResponse;
 import io.jsonwebtoken.JwtException;
 import jakarta.validation.ConstraintViolationException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -100,6 +102,19 @@ public class GlobalExceptionHandler {
                 ));
     }
 
+    /* ================= 403 ================= */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiErrorResponse> handleAccessDenied(AccessDeniedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(new ApiErrorResponse(
+                        403,
+                        "FORBIDDEN",
+                        "Access denied",
+                        Instant.now()
+                ));
+    }
+
+
     /* ================= 409 ================= */
 
     @ExceptionHandler(EmailAlreadyExistsException.class)
@@ -118,6 +133,26 @@ public class GlobalExceptionHandler {
                 .body(response);
     }
 
+    /* ================= 416 ================= */
+
+    @ExceptionHandler(RangeNotSatisfiableException.class)
+    public ResponseEntity<Void> handleRangeNotSatisfiable(
+            RangeNotSatisfiableException ex
+    ) {
+        HttpHeaders headers = new HttpHeaders();
+
+        // RFC 7233 requires this
+        headers.set(
+                HttpHeaders.CONTENT_RANGE,
+                "bytes */" + ex.getFileSize()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE)
+                .headers(headers)
+                .build();// ⬅ NO BODY
+    }
+
     /* ================= 500 ================= */
 
     @ExceptionHandler(Exception.class)
@@ -130,4 +165,16 @@ public class GlobalExceptionHandler {
                         Instant.now()
                 ));
     }
+
+    @ExceptionHandler(AudioStorageException.class)
+    public ResponseEntity<ApiErrorResponse> handleStorage(AudioStorageException ex) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiErrorResponse(
+                        500,
+                        "AUDIO_STORAGE_ERROR",
+                        ex.getMessage(),
+                        Instant.now()
+                ));
+    }
+
 }
