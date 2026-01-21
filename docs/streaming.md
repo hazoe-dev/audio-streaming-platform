@@ -51,32 +51,34 @@ This enables:
 * Efficient bandwidth usage
 
 
-## 🔄 High-level Streaming Flow (Final)
+## 🔄 High-level Streaming Flow 
 
 ```text
 Client (Browser / Mobile Player)
     |
     | GET /api/audios/{id}/stream
-    | Authorization: Bearer <JWT>
+    | Authorization: Bearer <JWT>   (optional for free audio)
     | Range: bytes=...
     |
     v
 Spring Security Filter Chain
     |
     |-- JwtAuthenticationFilter
-    |     - Parse JWT
-    |     - Set SecurityContext
+    |     - If Authorization header present:
+    |         • Validate JWT
+    |         • Populate SecurityContext
+    |     - If invalid JWT → 401 Unauthorized
     |
     |-- Method Security (@PreAuthorize)
     |     - audioAuth.canStream(id, authentication)
-    |     - 401 → unauthenticated
-    |     - 403 → forbidden (premium / role)
-    |     - audio not found → ALLOWED (handled later)
+    |     - Free audio        → allow
+    |     - Premium + no role → 403 Forbidden
+    |     - Audio not found   → allow (handled later)
     |
     v
 AudioController
     |
-    |-- Delegate streaming logic
+    |-- Delegate to AudioStreamService
     |
     v
 AudioStreamService
@@ -103,24 +105,39 @@ Client
   |
   |--- GET /api/audios/{id}/stream
   |     Range: bytes=5000000-8000000
-  |     Authorization: Bearer <JWT>
+  |     Authorization: Bearer <JWT> (optional)
   |
   v
 JwtAuthenticationFilter
   |
-  |-- JWT valid?
-  |     NO → 401 Unauthorized
-  |     YES → set SecurityContext
+  |-- Authorization header present?
+  |     NO  → continue unauthenticated
+  |     YES → validate JWT
+  |           |
+  |           |-- invalid → 401 Unauthorized
+  |           |-- valid   → set SecurityContext
   |
   v
 Method Security (@PreAuthorize)
   |
   |-- audioAuth.canStream(id, authentication)
   |     |
-  |     |-- non-premium audio → allow
-  |     |-- premium + ROLE_PREMIUM / ROLE_ADMIN → allow
-  |     |-- premium + missing role → 403 Forbidden
-  |     |-- audio not found → allow (existence handled later)
+  |     |-- audio.isPremium == false
+  |     |     → allow
+  |     |
+  |     |-- audio.isPremium == true
+  |           |
+  |           |-- authentication == null
+  |           |     → 403 Forbidden
+  |           |
+  |           |-- missing ROLE_PREMIUM / ROLE_ADMIN
+  |           |     → 403 Forbidden
+  |           |
+  |           |-- has ROLE_PREMIUM / ROLE_ADMIN
+  |                 → allow
+  |
+  |-- audio not found
+  |     → allow (existence checked in service)
   |
   v
 AudioController
@@ -131,7 +148,7 @@ AudioController
 AudioStreamService
   |
   |-- Load audio metadata
-  |-- If not found → throw AudioNotFoundException
+  |-- If not found → throw AudioNotFoundException (404)
   |-- Parse Range header
   |-- Calculate byte range
   |-- Create Resource
@@ -143,11 +160,46 @@ HTTP Response
       Content-Type: audio/mpeg
 ```
 
-> **Authorization vs Existence**
->
-> `@PreAuthorize` is used exclusively for access control (premium / role checks).
-> Audio existence is intentionally **not** checked at the security layer.
-> Missing resources are handled by the service layer and returned as `404 Not Found`.  
+## 🔐 Streaming Authorization Rules
+
+### Audio Access Policy
+
+```
+Free audio (is_premium = false)
+  - Authentication: NOT required
+  - Authorization: NOT required
+  - Result: ✅ Can stream
+
+Premium audio (is_premium = true)
+  - Not authenticated
+      → ❌ Forbidden (403)
+  - Authenticated without ROLE_PREMIUM / ROLE_ADMIN
+      → ❌ Forbidden (403)
+  - Authenticated with ROLE_PREMIUM or ROLE_ADMIN
+      → ✅ Can stream
+```
+
+### Decision Table
+
+| is_premium | Authenticated | Has ROLE_PREMIUM | Can stream | HTTP result |
+| ---------- | ------------- |------------------| ---------- | ----------- |
+| false      | ❌            | –                | ✅         | 200 / 206   |
+| false      | ✅            | –                | ✅         | 200 / 206   |
+| true       | ❌            | ❌               | ❌         | 403         |
+| true       | ✅            | ❌               | ❌         | 403         |
+| true       | ✅            | ✅               | ✅         | 200 / 206   |
+
+
+### Notes
+
+* Authorization is enforced via `@PreAuthorize(audioAuth.canStream(...))`
+* Audio existence is **not** checked at the security layer
+  → Missing audio is handled by the service and returns **404**
+* Streaming responses may return:
+
+  * `200 OK` for full content
+  * `206 Partial Content` when using HTTP Range requests
+
 
 
 ## 📤 Response Semantics
