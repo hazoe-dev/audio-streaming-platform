@@ -124,7 +124,7 @@ class AudioAuthorizationTest {
     }
 
     @Test
-    void canStream_shouldReturnFalse_whenAudioNotFound() {
+    void canStream_shouldReturnTrue_whenAudioNotFound() {
         // given
         given(audioRepository.findById(1L))
                 .willReturn(Optional.empty());
@@ -133,6 +133,6 @@ class AudioAuthorizationTest {
         boolean result = audioAuthorization.canStream(1L, null);
 
         // then
-        assertThat(result).isFalse();
+        assertThat(result).isTrue();
     }
 }
