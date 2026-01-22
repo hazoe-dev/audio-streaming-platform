@@ -1,5 +1,6 @@
 package dev.hazoe.audiostreaming.auth.security;
 
+import dev.hazoe.audiostreaming.common.security.UserPrincipal;
 import org.junit.jupiter.api.Test;
 
 import jakarta.servlet.FilterChain;

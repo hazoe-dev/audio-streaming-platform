@@ -1,5 +1,6 @@
 package dev.hazoe.audiostreaming.auth.security;
 
+import dev.hazoe.audiostreaming.common.security.UserPrincipal;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;

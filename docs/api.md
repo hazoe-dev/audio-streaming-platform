@@ -231,6 +231,7 @@ Streaming details are documented in
 
 ```
 POST /api/library/{audioId}
+Authorization: Bearer <JWT>
 ```
 
 **Response – 204 No Content**
@@ -240,6 +241,7 @@ POST /api/library/{audioId}
 
 ```
 DELETE /api/library/{audioId}
+Authorization: Bearer <JWT>
 ```
 
 **Response – 204 No Content**
@@ -249,20 +251,28 @@ DELETE /api/library/{audioId}
 
 ```
 GET /api/library
+Authorization: Bearer <JWT>
 ```
 
 **Response – 200 OK**
 
 ```json
-[
-  {
-    "audioId": 1,
-    "title": "Mindful Focus",
-    "addedAt": "2025-01-10T12:00:00Z"
-  }
-]
+{
+  "items": [
+    {
+      "id": 1,
+      "title": "Mindful Focus",
+      "durationSeconds": 1800,
+      "isPremium": true
+    }
+  ]
+}
 ```
 
+Only the _authenticated user’s data_ is returned.
+
+Library details are documented in  
+➡️ [`docs/library.md`](library.md)
 
 ## 5. Listening Progress API
 
