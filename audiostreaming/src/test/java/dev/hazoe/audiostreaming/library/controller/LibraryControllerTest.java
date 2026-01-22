@@ -112,5 +112,36 @@ class LibraryControllerTest {
 
         verify(libraryService).save(userId, audioId);
     }
+    @Test
+    void delete_shouldCallService_andReturn204_whenAuthenticated() {
+        // given
+        Long userId = 1L;
+        Long audioId = 10L;
+
+        UserPrincipal principal = new UserPrincipal(
+                userId,
+                "FREE"
+        );
+
+        // when
+        var result = mvc.delete()
+                .uri("/api/library/{audioId}", audioId)
+                .with(request -> {
+                    request.setUserPrincipal(
+                            new UsernamePasswordAuthenticationToken(
+                                    principal,
+                                    null,
+                                    principal.getAuthorities()
+                            )
+                    );
+                    return request;
+                })
+                .exchange();
+
+        // then
+        result.assertThat().hasStatus(HttpStatus.NO_CONTENT);
+
+        verify(libraryService).delete(userId, audioId);
+    }
 
 }

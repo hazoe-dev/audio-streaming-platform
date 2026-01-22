@@ -37,4 +37,9 @@ public class LibraryService {
         }
         libraryItemRepository.save(new LibraryItem(userId, audio));
     }
+
+    @Transactional
+    public void delete(Long userId, Long audioId) {
+        libraryItemRepository.deleteByUserIdAndAudio_Id(userId, audioId);
+    }
 }

@@ -183,4 +183,20 @@ class LibraryServiceTest {
         verifyNoInteractions(libraryItemRepository);
     }
 
+    @Test
+    void delete_shouldRemoveLibraryItem_whenUserAndAudioProvided() {
+        // given
+        Long userId = 1L;
+        Long audioId = 10L;
+
+        // when
+        libraryService.delete(userId, audioId);
+
+        // then
+        verify(libraryItemRepository)
+                .deleteByUserIdAndAudio_Id(userId, audioId);
+        verifyNoMoreInteractions(libraryItemRepository);
+    }
+
+
 }

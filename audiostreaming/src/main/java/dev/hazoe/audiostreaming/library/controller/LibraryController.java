@@ -33,6 +33,15 @@ public class LibraryController {
         return ResponseEntity.noContent().build();
     }
 
+    @DeleteMapping("/{audioId}")
+    public ResponseEntity<Void> delete(@PathVariable Long audioId,
+                                       Authentication authentication) {
+        Long userId = getUserId(authentication);
+        libraryService.delete(userId, audioId);
+        return ResponseEntity.noContent().build();
+
+    }
+
     private Long getUserId(Authentication authentication) {
         return ((UserPrincipal) authentication.getPrincipal()).getUserId();
     }
