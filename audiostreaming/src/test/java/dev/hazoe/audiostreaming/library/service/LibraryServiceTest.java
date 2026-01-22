@@ -1,6 +1,8 @@
 package dev.hazoe.audiostreaming.library.service;
 
 import dev.hazoe.audiostreaming.audio.domain.Audio;
+import dev.hazoe.audiostreaming.audio.repository.AudioRepository;
+import dev.hazoe.audiostreaming.common.exception.AudioNotFoundException;
 import dev.hazoe.audiostreaming.library.domain.LibraryItem;
 import dev.hazoe.audiostreaming.library.dto.LibraryItemDto;
 import dev.hazoe.audiostreaming.library.mapper.LibraryItemMapper;
@@ -12,7 +14,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.Optional;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.mockito.Mockito.*;
 
@@ -27,6 +31,9 @@ class LibraryServiceTest {
 
     @Mock
     private LibraryItemMapper libraryItemMapper;
+
+    @Mock
+    private AudioRepository audioRepository;
 
     @Test
     void list_shouldReturnLibraryItems_whenAuthenticatedUser() {
@@ -98,5 +105,82 @@ class LibraryServiceTest {
         verifyNoInteractions(libraryItemMapper);
     }
 
+    @Test
+    void save_shouldPersistLibraryItem_whenAudioExistsAndNotInLibrary() {
+        // given
+        Long userId = 1L;
+        Long audioId = 10L;
+
+        Audio audio = Audio.builder()
+                .id(audioId)
+                .build();
+
+        when(audioRepository.findById(audioId))
+                .thenReturn(Optional.of(audio));
+
+        when(libraryItemRepository.existsByUserIdAndAudio_Id(userId, audioId))
+                .thenReturn(false);
+
+        // when
+        libraryService.save(userId, audioId);
+
+        // then
+        verify(audioRepository).findById(audioId);
+        verify(libraryItemRepository)
+                .existsByUserIdAndAudio_Id(userId, audioId);
+
+        verify(libraryItemRepository).save(
+                argThat(item ->
+                        item.getUserId().equals(userId) &&
+                                item.getAudio().equals(audio)
+                )
+        );
+    }
+
+    @Test
+    void save_shouldDoNothing_whenLibraryItemAlreadyExists() {
+        // given
+        Long userId = 1L;
+        Long audioId = 10L;
+
+        Audio audio = Audio.builder()
+                .id(audioId)
+                .build();
+
+        when(audioRepository.findById(audioId))
+                .thenReturn(Optional.of(audio));
+
+        when(libraryItemRepository.existsByUserIdAndAudio_Id(userId, audioId))
+                .thenReturn(true);
+
+        // when
+        libraryService.save(userId, audioId);
+
+        // then
+        verify(audioRepository).findById(audioId);
+        verify(libraryItemRepository)
+                .existsByUserIdAndAudio_Id(userId, audioId);
+
+        verify(libraryItemRepository, never())
+                .save(any());
+    }
+
+    @Test
+    void save_shouldThrowAudioNotFoundException_whenAudioDoesNotExist() {
+        // given
+        Long userId = 1L;
+        Long audioId = 99L;
+
+        when(audioRepository.findById(audioId))
+                .thenReturn(Optional.empty());
+
+        // when / then
+        assertThatThrownBy(() -> libraryService.save(userId, audioId))
+                .isInstanceOf(AudioNotFoundException.class)
+                .hasMessageContaining(audioId.toString());
+
+        verify(audioRepository).findById(audioId);
+        verifyNoInteractions(libraryItemRepository);
+    }
 
 }

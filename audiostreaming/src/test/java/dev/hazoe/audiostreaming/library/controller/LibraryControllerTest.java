@@ -18,6 +18,7 @@ import tools.jackson.databind.ObjectMapper;
 import java.util.List;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @WebMvcTest(LibraryController.class)
@@ -79,4 +80,37 @@ class LibraryControllerTest {
         assertThat(response[0].durationSeconds()).isEqualTo(300);
         assertThat(response[0].premium()).isFalse();
     }
+
+    @Test
+    void save_shouldCallService_andReturn204_whenAuthenticated() {
+        // given
+        Long userId = 1L;
+        Long audioId = 10L;
+
+        UserPrincipal principal = new UserPrincipal(
+                userId,
+                "FREE"
+        );
+
+        // when
+        var result = mvc.post()
+                .uri("/api/library/{audioId}", audioId)
+                .with(request -> {
+                    request.setUserPrincipal(
+                            new UsernamePasswordAuthenticationToken(
+                                    principal,
+                                    null,
+                                    principal.getAuthorities()
+                            )
+                    );
+                    return request;
+                })
+                .exchange();
+
+        // then
+        result.assertThat().hasStatus(HttpStatus.NO_CONTENT);
+
+        verify(libraryService).save(userId, audioId);
+    }
+
 }

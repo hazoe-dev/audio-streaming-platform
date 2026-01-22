@@ -17,4 +17,5 @@ public interface LibraryItemRepository extends JpaRepository<LibraryItem, Long> 
             """)
     List<LibraryItem> findByUserIdWithAudio(Long userId);
 
+    boolean existsByUserIdAndAudio_Id(Long userId, Long audioId);
 }

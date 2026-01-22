@@ -1,5 +1,9 @@
 package dev.hazoe.audiostreaming.library.service;
 
+import dev.hazoe.audiostreaming.audio.domain.Audio;
+import dev.hazoe.audiostreaming.audio.repository.AudioRepository;
+import dev.hazoe.audiostreaming.common.exception.AudioNotFoundException;
+import dev.hazoe.audiostreaming.library.domain.LibraryItem;
 import dev.hazoe.audiostreaming.library.dto.LibraryItemDto;
 import dev.hazoe.audiostreaming.library.mapper.LibraryItemMapper;
 import dev.hazoe.audiostreaming.library.repository.LibraryItemRepository;
@@ -13,6 +17,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class LibraryService {
     private final LibraryItemRepository libraryItemRepository;
+    private final AudioRepository audioRepository;
     private final LibraryItemMapper libraryItemMapper;
 
     @Transactional(readOnly = true)
@@ -21,5 +26,15 @@ public class LibraryService {
                 .stream()
                 .map(this.libraryItemMapper::toDto)
                 .toList();
+    }
+
+    @Transactional
+    public void save(Long userId, Long audioId) {
+        Audio audio = audioRepository.findById(audioId)
+                .orElseThrow(() -> new AudioNotFoundException(audioId));
+        if (libraryItemRepository.existsByUserIdAndAudio_Id(userId, audioId)) {
+            return;
+        }
+        libraryItemRepository.save(new LibraryItem(userId, audio));
     }
 }

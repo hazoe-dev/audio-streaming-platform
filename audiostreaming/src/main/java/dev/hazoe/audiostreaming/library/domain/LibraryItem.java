@@ -33,5 +33,8 @@ public class LibraryItem {
     @Column(name = "saved_at")
     private Instant savedAt = Instant.now();
 
-
+    public LibraryItem(Long userId, Audio audio) {
+        this.userId = userId;
+        this.audio = audio;
+    }
 }
