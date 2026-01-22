@@ -1,4 +1,4 @@
-package dev.hazoe.audiostreaming.auth.security;
+package dev.hazoe.audiostreaming.common.security;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -14,6 +14,10 @@ public class UserPrincipal implements UserDetails {
     public UserPrincipal(Long userId, String role) {
         this.userId = userId;
         this.role = role;
+    }
+
+    public Long getUserId() {
+        return userId;
     }
 
     @Override

@@ -1,5 +1,6 @@
 package dev.hazoe.audiostreaming.auth.security;
 
+import dev.hazoe.audiostreaming.common.security.UserPrincipal;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
