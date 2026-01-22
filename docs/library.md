@@ -168,7 +168,7 @@ Refer to source code for:
 
 The following scenarios are covered at controller/service level:
 
-* Anonymous access → `401 Unauthorized`
+* Anonymous access → `403 Forbidden` _(In Spring: Anonymous is considered authenticated but not authorized)_
 * Save audio successfully
 * Save audio twice → still `204`
 * List library returns only user‑owned items
@@ -176,6 +176,9 @@ The following scenarios are covered at controller/service level:
 
 Database behavior is validated indirectly via integration tests.
 
+> **Note:**  
+Spring Security installs an AnonymousAuthenticationToken by default.
+That causes authorization to run even without credentials, resulting in 403 instead of 401.
 
 ## 9. Design Summary
 
