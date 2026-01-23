@@ -174,7 +174,7 @@ erDiagram
 * id (PK)
 * user_id (FK → users)
 * audio_id (FK → audio)
-* created_at
+* saved_at
 * UNIQUE(user_id, audio_id)
 
 ### Listening Progress
@@ -274,6 +274,30 @@ GET /api/search?keyword=sony
 
 ➡️ **Streaming flow & HTTP semantics:**  
 ➡️ See [docs/streaming.md](docs/streaming.md)
+
+## 📚 User Library
+
+Authenticated users can manage a personal audio library.
+
+Key characteristics:
+
+* User-scoped ownership of saved audio
+* Explicit join modeling (`library_item`)
+* Independent of streaming and resume listening
+* Idempotent add/remove operations
+
+➡️ See: [docs/library.md](docs/library.md)
+
+## 🎧 Resume Listening
+
+The system supports resuming audio playback from the last listened position.
+
+Key characteristics:
+- User-scoped and audio-scoped progress
+- Stateless streaming using HTTP Range
+- Progress persistence decoupled from streaming
+
+➡️ See: [docs/resume-listening.md](docs/resume-listening.md)
 
 
 ## 🔍 Search Design
