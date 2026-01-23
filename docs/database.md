@@ -159,7 +159,6 @@ CREATE TABLE listening_progress (
     updated_at TIMESTAMP NOT NULL DEFAULT now(),
 
     CONSTRAINT uq_progress_user_audio UNIQUE (user_id, audio_id),
-    CONSTRAINT fk_progress_audio FOREIGN KEY (audio_id) REFERENCES audio(id)
 );
 ```
 
@@ -167,7 +166,9 @@ CREATE TABLE listening_progress (
 
 * Represents **behavioral state**, not core domain data
 * Exactly **one progress record per `(user, audio)`**
-* `user_id` is stored as a **scalar value** to avoid coupling with the User aggregate
+* `user_id`, `audio_id` are stored as a **scalar value** to avoid coupling with the aggregates.
+    * `user_id` We get all user data from authentication JWT with principal. User aggregate is external context.
+    * `audio_id` It tracks progress, not audio metadata; Audio is not part of this aggregate, it’s just a reference.
 * Uses a surrogate primary key for ORM simplicity and future extensibility
 * Updated frequently during playback
 * Enables accurate **seek & resume** functionality

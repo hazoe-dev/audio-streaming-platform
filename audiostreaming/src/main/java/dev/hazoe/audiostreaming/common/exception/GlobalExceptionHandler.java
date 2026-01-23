@@ -53,6 +53,22 @@ public class GlobalExceptionHandler {
                 ));
     }
 
+    @ExceptionHandler(InvalidProgressPositionException.class)
+    public ResponseEntity<ApiErrorResponse> handleInvalidProgressPosition(
+            InvalidProgressPositionException ex
+    ) {
+        return ResponseEntity.badRequest()
+                .body(
+                        new ApiErrorResponse(
+                                400,
+                                "INVALID_PROGRESS_POSITION",
+                                ex.getMessage(),
+                                Instant.now()
+                        ));
+
+    }
+
+
     /* ================= 401 ================= */
     @ExceptionHandler(InvalidCredentialsException.class)
     public ResponseEntity<ApiErrorResponse> handleInvalidCredentials(

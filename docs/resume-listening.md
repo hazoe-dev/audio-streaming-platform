@@ -62,7 +62,6 @@ CREATE TABLE listening_progress (
     updated_at TIMESTAMP NOT NULL DEFAULT now(),
 
     CONSTRAINT uq_progress_user_audio UNIQUE (user_id, audio_id),
-    CONSTRAINT fk_progress_audio FOREIGN KEY (audio_id) REFERENCES audio(id)
 );
 ```
 
@@ -70,7 +69,8 @@ CREATE TABLE listening_progress (
 
 * **One progress record per (user, audio)**, enforced via a database unique constraint
 * Uses a surrogate key for ORM simplicity
-* `user_id` is stored as a **scalar value** to avoid coupling with the User aggregate
+* `user_id`, `audio_id` are stored as a **scalar value** to avoid coupling with the User and Audio aggregates because 
+they are used to reference and ListeningProgress does not get metadata from 2 aggregates. 
 * `updated_at` is managed by the database to ensure consistency
 * Resume listening data is treated as **behavioral state**, not user identity
 
