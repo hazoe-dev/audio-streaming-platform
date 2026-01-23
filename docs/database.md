@@ -148,26 +148,31 @@ CREATE TABLE library_item (
 
 ### 4.4 Listening Progress
 
-Tracks resume-listening position per user and audio.
+Tracks **resume-listening state** per user and audio.
 
 ```sql
 CREATE TABLE listening_progress (
     id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     user_id BIGINT NOT NULL,
     audio_id BIGINT NOT NULL,
-    last_position_seconds INT NOT NULL,
+    position_seconds INT NOT NULL,
     updated_at TIMESTAMP NOT NULL DEFAULT now(),
-    CONSTRAINT fk_progress_user FOREIGN KEY (user_id) REFERENCES users(id),
-    CONSTRAINT fk_progress_audio FOREIGN KEY (audio_id) REFERENCES audio(id),
-    CONSTRAINT uq_progress_user_audio UNIQUE (user_id, audio_id)
+
+    CONSTRAINT uq_progress_user_audio UNIQUE (user_id, audio_id),
 );
 ```
 
 **Notes:**
 
-* One progress record per `(user, audio)`
+* Represents **behavioral state**, not core domain data
+* Exactly **one progress record per `(user, audio)`**
+* `user_id`, `audio_id` are stored as a **scalar value** to avoid coupling with the aggregates.
+    * `user_id` We get all user data from authentication JWT with principal. User aggregate is external context.
+    * `audio_id` It tracks progress, not audio metadata; Audio is not part of this aggregate, it’s just a reference.
+* Uses a surrogate primary key for ORM simplicity and future extensibility
 * Updated frequently during playback
-* Enables accurate resume functionality
+* Enables accurate **seek & resume** functionality
+* Independent of user library membership
 
 
 ### 4.5 Refresh Tokens
