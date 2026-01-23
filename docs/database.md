@@ -119,15 +119,16 @@ CREATE TABLE audio (
 
 ### 4.3 Library Item
 
-Represents a **user-owned audio item**.
+Represents a **user-owned audio item** in a user’s personal library.
+
+This entity explicitly models ownership and persistence of saved audio, rather than acting as a bare many-to-many join table.
 
 ```sql
 CREATE TABLE library_item (
     id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     user_id BIGINT NOT NULL,
     audio_id BIGINT NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT now(),
-    CONSTRAINT fk_library_item_user FOREIGN KEY (user_id) REFERENCES users(id),
+    saved_at TIMESTAMP NOT NULL DEFAULT now(),
     CONSTRAINT fk_library_item_audio FOREIGN KEY (audio_id) REFERENCES audio(id),
     CONSTRAINT uq_library_item_user_audio UNIQUE (user_id, audio_id)
 );
@@ -135,10 +136,14 @@ CREATE TABLE library_item (
 
 **Notes:**
 
-* Models ownership explicitly
-* Prevents duplicate ownership records
-* Designed as a domain entity, not a bare join table
-* Can be extended with additional metadata in the future
+* Models ownership explicitly via `user_id`
+* `user_id` is stored as a scalar value to avoid coupling with the User aggregate
+* Prevents duplicate ownership records with a composite unique constraint
+* Designed as a **domain entity**, not a join table
+* Supports future extension (e.g. tags, folders, progress snapshot, source)
+* `saved_at` captures when the user added the audio to their library
+
+> The User aggregate is referenced by identifier only to maintain aggregate boundaries and reduce coupling.
 
 
 ### 4.4 Listening Progress
