@@ -315,19 +315,47 @@ GET /api/progress/{audioId}
 ### 6.1 Search Audio
 
 ```
-GET /api/search?keyword=focus
+GET /api/audios/search?q=focus&page=0&size=10
 ```
 
 **Response – 200 OK**
 
 ```json
-[
-  {
-    "id": 1,
-    "title": "Mindful Focus",
-    "isPremium": false
-  }
-]
+{
+  "content": [
+    {
+      "id": 1,
+      "title": "Mindful Focus",
+      "durationSeconds": 1800,
+      "isPremium": false
+    }
+  ],
+  "empty": false,
+  "first": true,
+  "last": true,
+  "number": 0,
+  "numberOfElements": 1,
+  "pageable": {
+    "offset": 0,
+    "pageNumber": 0,
+    "pageSize": 10,
+    "paged": true,
+    "sort": {
+      "empty": true,
+      "sorted": false,
+      "unsorted": true
+    },
+    "unpaged": false
+  },
+  "size": 10,
+  "sort": {
+    "empty": true,
+    "sorted": false,
+    "unsorted": true
+  },
+  "totalElements": 1,
+  "totalPages": 1
+}
 ```
 
 ## 7. HTTP Status Codes

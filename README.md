@@ -275,6 +275,7 @@ GET /api/search?keyword=sony
 ➡️ **Streaming flow & HTTP semantics:**  
 ➡️ See [docs/streaming.md](docs/streaming.md)
 
+
 ## 📚 User Library
 
 Authenticated users can manage a personal audio library.
@@ -287,6 +288,7 @@ Key characteristics:
 * Idempotent add/remove operations
 
 ➡️ See: [docs/library.md](docs/library.md)
+
 
 ## 🎧 Resume Listening
 
@@ -302,12 +304,15 @@ Key characteristics:
 
 ## 🔍 Search Design
 
-* PostgreSQL full-text search (`tsvector`)
-* GIN index for fast lookup
-* Search vector updated on insert/update
+* PostgreSQL full-text search using `tsvector`
+* GIN index for efficient keyword lookup
+* `search_vector` is maintained by the database as a generated column, avoiding application-level coupling
 
-> Search is intentionally kept inside PostgreSQL to avoid premature Elasticsearch complexity.
+> PostgreSQL full-text search is sufficient for the current scale and requirements.  
+> This avoids premature complexity while preserving a clear migration path to Elasticsearch in the future.
 
+
+➡️ See: [docs/search.md](docs/search.md)
 
 ## 📎 Notes
 
