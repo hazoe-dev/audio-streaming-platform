@@ -46,6 +46,14 @@ public class Audio {
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 
+    @Column(
+            name = "search_vector",
+            columnDefinition = "tsvector",
+            insertable = false,
+            updatable = false
+    )
+    private String searchVector;
+
     @PrePersist
     void prePersist() {
         this.createdAt = Instant.now();
