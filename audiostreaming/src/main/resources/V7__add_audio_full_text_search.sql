@@ -3,6 +3,9 @@
 
 -- 1️⃣ Add generated search_vector column
 ALTER TABLE audio
+DROP COLUMN search_vector;
+
+ALTER TABLE audio
     ADD COLUMN search_vector tsvector
         GENERATED ALWAYS AS (
             to_tsvector(
@@ -10,6 +13,7 @@ ALTER TABLE audio
                     coalesce(title, '') || ' ' || coalesce(description, '')
             )
             ) STORED;
+
 
 -- 2️⃣ Create GIN index for fast full-text search
 CREATE INDEX idx_audio_search_vector
