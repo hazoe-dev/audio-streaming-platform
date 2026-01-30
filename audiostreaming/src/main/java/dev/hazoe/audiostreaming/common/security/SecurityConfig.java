@@ -42,6 +42,8 @@ public class SecurityConfig {
                                 "/api/audios/*",
                                 "/api/audios/*/stream").permitAll()
 
+                        .requestMatchers(HttpMethod.GET,"/actuator/health").permitAll()
+
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
