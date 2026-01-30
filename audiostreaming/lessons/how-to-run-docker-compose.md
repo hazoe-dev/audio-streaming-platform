@@ -113,8 +113,6 @@ container (running)
 Sau khi up xong:
 
 * 🌐 API: [http://localhost:8080](http://localhost:8080)
-* ❤️ Health: [http://localhost:8080/actuator/health](http://localhost:8080/actuator/health)
-* 🐘 DB: chạy healthy
 
 
 ## Tổng kết
