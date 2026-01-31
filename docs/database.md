@@ -102,10 +102,8 @@ CREATE TABLE audio (
     cover_path TEXT,
     is_premium BOOLEAN NOT NULL DEFAULT FALSE,
     search_vector tsvector,
-    user_id BIGINT NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT now(),
-    CONSTRAINT fk_audio_user
-        FOREIGN KEY (user_id) REFERENCES users(id)
+    owner_id BIGINT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT now()
 );
 
 ```

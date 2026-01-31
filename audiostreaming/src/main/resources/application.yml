@@ -1,30 +1,29 @@
 spring:
   application:
     name: audiostreaming
+
   datasource:
-    url: jdbc:postgresql://localhost:5432/audio
-    username: postgres
-    password:
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
+
   jpa:
     hibernate:
-      ddl-auto: update
-    show-sql: true
-
+      ddl-auto: none
+    show-sql: ${JPA_SHOW_SQL:true}
 
 server:
-  port: 8080
-
+  port: ${SERVER_PORT:8080}
 
 security:
   jwt:
-    secret: MSOt3eJZ+Zq/U+dzQ0j9lT3A5Vdo41uhLKYVMRAVdRw=
-    access-expiration: 900      # 15 minutes
-    refresh-expiration: 2592000 # 30 days
-    issuer: audiostreaming
+    secret: ${JWT_SECRET}
+    access-expiration: ${JWT_ACCESS_EXP:900}
+    refresh-expiration: ${JWT_REFRESH_EXP:2592000}
+    issuer: ${JWT_ISSUER:audiostreaming}
 
 app:
   cdn:
-    cover-base-url: http://localhost:8080
-    audio-base-url: ./storage
-
+    cover-base-url: ${APP_COVER_BASE_URL}
+    audio-base-url: ${APP_AUDIO_BASE_URL}

@@ -31,6 +31,7 @@ public class LibraryItem {
     private Audio audio;
 
     @Column(name = "saved_at")
+    @Builder.Default
     private Instant savedAt = Instant.now();
 
     public LibraryItem(Long userId, Audio audio) {

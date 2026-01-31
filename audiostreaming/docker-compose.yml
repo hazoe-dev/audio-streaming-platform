@@ -1,0 +1,42 @@
+version: "3.9"
+
+services:
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    volumes:
+      - ./storage:/storage
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - api
+
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: audiostreaming
+      POSTGRES_USER: audio_user
+      POSTGRES_PASSWORD: secret
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U audio_user"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    expose:
+      - "8080"
+    volumes:
+      - ./storage:/storage
+volumes:
+  pgdata:
