@@ -368,6 +368,14 @@ This strategy provides:
 GET /actuator/health
 ```
 
+```bash 
+docker logs -f audiostreaming-nginx-1
+```
+
+Access log output
+```shell
+172.20.0.1 - - [31/Jan/2026:08:43:42 +0000] "GET /actuator/health HTTP/1.1" 200 60 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36" "-"
+```
 ## ✅ Summary
 
 - Realistic setup for small-scale production
