@@ -41,4 +41,9 @@ public class AudioService implements AudioQueryService {
     public Optional<AudioDetailDto> getDetailsById(Long audioId) {
         return audioRepository.findById(audioId).map(audioMapper::toDetail);
     }
+
+    @Override
+    public Page<AudioListItemDto> search(String query, Pageable pageable) {
+        return audioRepository.search(query, pageable).map(audioMapper::toListItem);
+    }
 }

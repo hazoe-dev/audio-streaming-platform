@@ -1,9 +1,7 @@
 package dev.hazoe.audiostreaming.search.service;
 
-import dev.hazoe.audiostreaming.audio.domain.Audio;
 import dev.hazoe.audiostreaming.audio.dto.AudioListItemDto;
-import dev.hazoe.audiostreaming.audio.mapper.AudioMapper;
-import dev.hazoe.audiostreaming.audio.repository.AudioRepository;
+import dev.hazoe.audiostreaming.audio.service.expose.AudioQueryService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -23,10 +21,7 @@ import static org.mockito.Mockito.*;
 class AudioSearchServiceTest {
 
     @Mock
-    private AudioRepository audioRepository;
-
-    @Mock
-    private AudioMapper audioMapper;
+    private AudioQueryService audioQueryService;
 
     @InjectMocks
     private AudioSearchService audioSearchService;
@@ -38,8 +33,7 @@ class AudioSearchServiceTest {
         Page<AudioListItemDto> result = audioSearchService.search("   ", pageable);
 
         assertThat(result).isEmpty();
-        verifyNoInteractions(audioRepository);
-        verifyNoInteractions(audioMapper);
+        verifyNoInteractions(audioQueryService);
     }
 
     @Test
@@ -49,7 +43,7 @@ class AudioSearchServiceTest {
         Page<AudioListItemDto> result = audioSearchService.search(null, pageable);
 
         assertThat(result).isEmpty();
-        verifyNoInteractions(audioRepository);
+        verifyNoInteractions(audioQueryService);
     }
 
     @Test
@@ -57,27 +51,24 @@ class AudioSearchServiceTest {
         Pageable pageable = PageRequest.of(0, 10);
         String keyword = "hello world";
 
-        Audio audio = new Audio(); // can be minimal
-        AudioListItemDto dto = new AudioListItemDto(
+        AudioListItemDto audio = new AudioListItemDto(
                 10l,
                 "Hello world",
                 123,
                 true
         );
 
-        Page<Audio> audioPage = new PageImpl<>(List.of(audio), pageable, 1);
+        Page<AudioListItemDto> audioPage = new PageImpl<>(List.of(audio), pageable, 1);
 
-        when(audioRepository.search("hello:* | world:*", pageable))
+        when(audioQueryService.search("hello:* | world:*", pageable))
                 .thenReturn(audioPage);
-        when(audioMapper.toListItem(audio)).thenReturn(dto);
 
         Page<AudioListItemDto> result =
                 audioSearchService.search(keyword, pageable);
 
-        assertThat(result.getContent()).containsExactly(dto);
+        assertThat(result.getContent()).containsExactly(audio);
 
-        verify(audioRepository).search("hello:* | world:*", pageable);
-        verify(audioMapper).toListItem(audio);
+        verify(audioQueryService).search("hello:* | world:*", pageable);
     }
 
     @Test
@@ -85,12 +76,12 @@ class AudioSearchServiceTest {
         Pageable pageable = PageRequest.of(0, 10);
         String keyword = "java-spring boot!";
 
-        when(audioRepository.search("javaspring:* | boot:*",pageable))
+        when(audioQueryService.search("javaspring:* | boot:*",pageable))
                 .thenReturn(Page.empty(pageable));
 
         audioSearchService.search(keyword, pageable);
 
-        verify(audioRepository).search("javaspring:* | boot:*", pageable);
+        verify(audioQueryService).search("javaspring:* | boot:*", pageable);
     }
 
 }
