@@ -45,14 +45,13 @@ This approach balances **simplicity**, **transactional consistency**, and **deve
 Each top-level package represents a **bounded context** with its own responsibility.
 
 | Module     | Responsibility                                 |
-| ---------- | ---------------------------------------------- |
+| ---------- |------------------------------------------------|
 | `auth`     | Authentication, authorization, token lifecycle |
 | `audio`    | Audio metadata and access rules                |
 | `library`  | User-owned audio                               |
 | `progress` | Resume listening state                         |
 | `search`   | Full-text search                               |
-| `common`   | Cross-cutting concerns                         |
-| `config`   | Application configuration                      |
+| `common`   | Cross-cutting concerns, Application configuration                       |
 
 Modules communicate via **service interfaces**, not repositories or entities.
 
