@@ -1,6 +1,5 @@
 package dev.hazoe.audiostreaming.library.domain;
 
-import dev.hazoe.audiostreaming.audio.domain.Audio;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -26,16 +25,15 @@ public class LibraryItem {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "audio_id", nullable = false)
-    private Audio audio;
+    @Column(name = "audio_id", nullable = false)
+    private Long audioId;
 
     @Column(name = "saved_at")
-    @Builder.Default
-    private Instant savedAt = Instant.now();
+    private Instant savedAt;
 
-    public LibraryItem(Long userId, Audio audio) {
+    public LibraryItem(Long userId, Long audioId) {
         this.userId = userId;
-        this.audio = audio;
+        this.audioId = audioId;
+        savedAt = Instant.now();
     }
 }

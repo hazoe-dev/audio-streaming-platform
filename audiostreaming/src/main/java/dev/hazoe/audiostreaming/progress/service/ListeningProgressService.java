@@ -1,7 +1,9 @@
 package dev.hazoe.audiostreaming.progress.service;
 
 import dev.hazoe.audiostreaming.audio.domain.Audio;
+import dev.hazoe.audiostreaming.audio.dto.AudioDetailDto;
 import dev.hazoe.audiostreaming.audio.repository.AudioRepository;
+import dev.hazoe.audiostreaming.audio.service.expose.AudioQueryService;
 import dev.hazoe.audiostreaming.common.exception.AudioNotFoundException;
 import dev.hazoe.audiostreaming.common.exception.InvalidProgressPositionException;
 import dev.hazoe.audiostreaming.progress.domain.ListeningProgress;
@@ -15,16 +17,16 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class ListeningProgressService {
     private final ListeningProgressRepository progressRepository;
-    private final AudioRepository audioRepository;
+    private final AudioQueryService audioQueryService;
 
     @Transactional
     public void saveProgress(Long userId, Long audioId, int positionSeconds) {
 
-        Audio audio = audioRepository.findById(audioId)
+        AudioDetailDto audio = audioQueryService.getDetailsById(audioId)
                 .orElseThrow(() -> new AudioNotFoundException(audioId));
 
-        if (positionSeconds > audio.getDurationSeconds()) {
-            throw new InvalidProgressPositionException(positionSeconds, audio.getDurationSeconds());
+        if (positionSeconds > audio.durationSeconds()) {
+            throw new InvalidProgressPositionException(positionSeconds, audio.durationSeconds());
         }
 
         ListeningProgress progress =
@@ -41,8 +43,9 @@ public class ListeningProgressService {
 
     @Transactional(readOnly = true)
     public ListeningProgressResponse getProgress(Long userId, Long audioId) {
-        audioRepository.findById(audioId)
-                .orElseThrow(() -> new AudioNotFoundException(audioId));
+        if (!audioQueryService.existsById(audioId)) {
+            throw new AudioNotFoundException(audioId);
+        }
 
         return progressRepository.findByUserIdAndAudioId(userId, audioId)
                 .map(progress -> new ListeningProgressResponse(

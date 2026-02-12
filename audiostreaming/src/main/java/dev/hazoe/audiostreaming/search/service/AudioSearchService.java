@@ -1,8 +1,7 @@
 package dev.hazoe.audiostreaming.search.service;
 
 import dev.hazoe.audiostreaming.audio.dto.AudioListItemDto;
-import dev.hazoe.audiostreaming.audio.mapper.AudioMapper;
-import dev.hazoe.audiostreaming.audio.repository.AudioRepository;
+import dev.hazoe.audiostreaming.audio.service.expose.AudioQueryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -15,8 +14,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AudioSearchService {
 
-    private final AudioRepository audioRepository;
-    private final AudioMapper audioMapper;
+    private final AudioQueryService audioQueryService;
 
     public Page<AudioListItemDto> search(String keyword, Pageable pageable) {
         if (keyword == null || keyword.isBlank()) {
@@ -25,8 +23,7 @@ public class AudioSearchService {
 
         String tsQuery = toTsQuery(keyword);
 
-        return audioRepository.search(tsQuery, pageable)
-                .map(audioMapper::toListItem);
+        return audioQueryService.search(tsQuery, pageable);
     }
 
     private String toTsQuery(String keyword) {

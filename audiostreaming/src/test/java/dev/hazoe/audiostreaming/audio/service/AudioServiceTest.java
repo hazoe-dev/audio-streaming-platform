@@ -18,7 +18,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class AudioServiceTest {
@@ -124,4 +124,180 @@ class AudioServiceTest {
 
         verify(audioRepository).findById(99L);
     }
+
+    @Test
+    void existsById_shouldReturnTrue_whenAudioExists() {
+        Long audioId = 1L;
+
+        when(audioRepository.existsById(audioId)).thenReturn(true);
+
+        boolean result = audioService.existsById(audioId);
+
+        assertThat(result).isTrue();
+        verify(audioRepository).existsById(audioId);
+    }
+
+    @Test
+    void existsById_shouldReturnFalse_whenAudioDoesNotExist() {
+        Long audioId = 1L;
+
+        when(audioRepository.existsById(audioId)).thenReturn(false);
+
+        boolean result = audioService.existsById(audioId);
+
+        assertThat(result).isFalse();
+    }
+
+    @Test
+    void getDetailsById_shouldReturnMappedDto_whenAudioExists() {
+        Long audioId = 1L;
+
+        Audio audio = new Audio();
+        AudioDetailDto dto = mock(AudioDetailDto.class);
+
+        when(audioRepository.findById(audioId)).thenReturn(Optional.of(audio));
+        when(audioMapper.toDetail(audio)).thenReturn(dto);
+
+        Optional<AudioDetailDto> result = audioService.getDetailsById(audioId);
+
+        assertThat(result).contains(dto);
+
+        verify(audioRepository).findById(audioId);
+        verify(audioMapper).toDetail(audio);
+    }
+
+    @Test
+    void getDetailsById_shouldReturnEmpty_whenAudioDoesNotExist() {
+        Long audioId = 1L;
+
+        when(audioRepository.findById(audioId)).thenReturn(Optional.empty());
+
+        Optional<AudioDetailDto> result = audioService.getDetailsById(audioId);
+
+        assertThat(result).isEmpty();
+
+        verify(audioRepository).findById(audioId);
+        verifyNoInteractions(audioMapper);
+    }
+
+    @Test
+    void search_shouldReturnMappedPage() {
+        String query = "rock";
+        Pageable pageable = PageRequest.of(0, 10);
+
+        Audio audio = new Audio();
+        AudioListItemDto dto = mock(AudioListItemDto.class);
+
+        Page<Audio> audioPage = new PageImpl<>(List.of(audio));
+
+        when(audioRepository.search(query, pageable)).thenReturn(audioPage);
+        when(audioMapper.toListItem(audio)).thenReturn(dto);
+
+        Page<AudioListItemDto> result = audioService.search(query, pageable);
+
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().getFirst()).isEqualTo(dto);
+
+        verify(audioRepository).search(query, pageable);
+        verify(audioMapper).toListItem(audio);
+    }
+
+    @Test
+    void getSummaryList_shouldReturnDtos_whenAllIdsExist() {
+        // given
+        List<Long> ids = List.of(1L, 2L);
+
+        Audio audio1 = new Audio();
+        audio1.setId(1L);
+
+        Audio audio2 = new Audio();
+        audio2.setId(2L);
+
+        AudioListItemDto dto1 = mock(AudioListItemDto.class);
+        AudioListItemDto dto2 = mock(AudioListItemDto.class);
+
+        when(audioRepository.findAllById(ids))
+                .thenReturn(List.of(audio1, audio2));
+
+        when(audioMapper.toListItem(audio1)).thenReturn(dto1);
+        when(audioMapper.toListItem(audio2)).thenReturn(dto2);
+
+        // when
+        List<AudioListItemDto> result = audioService.getSummaryList(ids);
+
+        // then
+        assertThat(result).containsExactly(dto1, dto2);
+
+        verify(audioRepository).findAllById(ids);
+        verify(audioMapper).toListItem(audio1);
+        verify(audioMapper).toListItem(audio2);
+    }
+
+    @Test
+    void getSummaryList_shouldThrowException_whenAnyIdMissing() {
+        // given
+        List<Long> ids = List.of(1L, 2L);
+
+        Audio audio1 = new Audio();
+        audio1.setId(1L);
+
+        AudioListItemDto dto1 = mock(AudioListItemDto.class);
+
+        when(audioRepository.findAllById(ids))
+                .thenReturn(List.of(audio1));
+
+        when(audioMapper.toListItem(audio1))
+                .thenReturn(dto1);
+
+        // when & then
+        assertThatThrownBy(() -> audioService.getSummaryList(ids))
+                .isInstanceOf(AudioNotFoundException.class)
+                .hasMessageContaining("2");
+
+        verify(audioRepository).findAllById(ids);
+    }
+
+    @Test
+    void getSummaryList_shouldPreserveInputOrder() {
+        // given
+        List<Long> ids = List.of(1L, 2L);
+
+        Audio audio1 = new Audio();
+        audio1.setId(1L);
+
+        Audio audio2 = new Audio();
+        audio2.setId(2L);
+
+        AudioListItemDto dto1 = mock(AudioListItemDto.class);
+        AudioListItemDto dto2 = mock(AudioListItemDto.class);
+
+        // DB returns reversed order
+        when(audioRepository.findAllById(ids))
+                .thenReturn(List.of(audio2, audio1));
+
+        when(audioMapper.toListItem(audio1)).thenReturn(dto1);
+        when(audioMapper.toListItem(audio2)).thenReturn(dto2);
+
+        // when
+        List<AudioListItemDto> result = audioService.getSummaryList(ids);
+
+        // then
+        assertThat(result).containsExactly(dto1, dto2);
+    }
+
+    @Test
+    void getSummaryList_shouldReturnEmpty_whenInputEmpty() {
+        // given
+        List<Long> ids = List.of();
+
+        when(audioRepository.findAllById(ids))
+                .thenReturn(List.of());
+
+        // when
+        List<AudioListItemDto> result = audioService.getSummaryList(ids);
+
+        // then
+        assertThat(result).isEmpty();
+    }
+
 }

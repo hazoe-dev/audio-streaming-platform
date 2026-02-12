@@ -1,7 +1,7 @@
 package dev.hazoe.audiostreaming.progress.service;
 
-import dev.hazoe.audiostreaming.audio.domain.Audio;
-import dev.hazoe.audiostreaming.audio.repository.AudioRepository;
+import dev.hazoe.audiostreaming.audio.dto.AudioDetailDto;
+import dev.hazoe.audiostreaming.audio.service.expose.AudioQueryService;
 import dev.hazoe.audiostreaming.common.exception.AudioNotFoundException;
 import dev.hazoe.audiostreaming.common.exception.InvalidProgressPositionException;
 import dev.hazoe.audiostreaming.progress.domain.ListeningProgress;
@@ -27,7 +27,7 @@ class ListeningProgressServiceTest {
     private ListeningProgressRepository progressRepository;
 
     @Mock
-    private AudioRepository audioRepository;
+    private AudioQueryService audioQueryService;
 
     @InjectMocks
     private ListeningProgressService service;
@@ -36,7 +36,7 @@ class ListeningProgressServiceTest {
 
     @Test
     void saveProgress_whenAudioNotFound_shouldThrowException() {
-        when(audioRepository.findById(10L)).thenReturn(Optional.empty());
+        when(audioQueryService.getDetailsById(10L)).thenReturn(Optional.empty());
 
         assertThrows(
                 AudioNotFoundException.class,
@@ -48,9 +48,9 @@ class ListeningProgressServiceTest {
 
     @Test
     void saveProgress_whenPositionExceedsDuration_shouldThrowException() {
-        Audio audio = mock(Audio.class);
-        when(audio.getDurationSeconds()).thenReturn(100);
-        when(audioRepository.findById(10L)).thenReturn(Optional.of(audio));
+        AudioDetailDto audio = mock(AudioDetailDto.class);
+        when(audio.durationSeconds()).thenReturn(100);
+        when(audioQueryService.getDetailsById(10L)).thenReturn(Optional.of(audio));
 
         assertThrows(
                 InvalidProgressPositionException.class,
@@ -62,9 +62,9 @@ class ListeningProgressServiceTest {
 
     @Test
     void saveProgress_whenProgressExists_shouldUpdateWithoutSave() {
-        Audio audio = mock(Audio.class);
-        when(audio.getDurationSeconds()).thenReturn(300);
-        when(audioRepository.findById(10L)).thenReturn(Optional.of(audio));
+        AudioDetailDto audio = mock(AudioDetailDto.class);
+        when(audio.durationSeconds()).thenReturn(300);
+        when(audioQueryService.getDetailsById(10L)).thenReturn(Optional.of(audio));
 
         ListeningProgress progress = mock(ListeningProgress.class);
         when(progressRepository.findByUserIdAndAudioId(1L, 10L))
@@ -78,9 +78,9 @@ class ListeningProgressServiceTest {
 
     @Test
     void saveProgress_whenProgressDoesNotExist_shouldSaveOnceAndUpdate() {
-        Audio audio = mock(Audio.class);
-        when(audio.getDurationSeconds()).thenReturn(300);
-        when(audioRepository.findById(10L)).thenReturn(Optional.of(audio));
+        AudioDetailDto audio = mock(AudioDetailDto.class);
+        when(audio.durationSeconds()).thenReturn(300);
+        when(audioQueryService.getDetailsById(10L)).thenReturn(Optional.of(audio));
 
         when(progressRepository.findByUserIdAndAudioId(1L, 10L))
                 .thenReturn(Optional.empty());
@@ -103,11 +103,10 @@ class ListeningProgressServiceTest {
         Long userId = 1L;
         Long audioId = 10L;
 
-        Audio audio = mock(Audio.class);
         ListeningProgress progress = mock(ListeningProgress.class);
 
-        when(audioRepository.findById(audioId))
-                .thenReturn(Optional.of(audio));
+        when(audioQueryService.existsById(audioId))
+                .thenReturn(true);
         when(progressRepository.findByUserIdAndAudioId(userId, audioId))
                 .thenReturn(Optional.of(progress));
         when(progress.getPositionSeconds())
@@ -128,10 +127,8 @@ class ListeningProgressServiceTest {
         Long userId = 1L;
         Long audioId = 10L;
 
-        Audio audio = mock(Audio.class);
-
-        when(audioRepository.findById(audioId))
-                .thenReturn(Optional.of(audio));
+        when(audioQueryService.existsById(audioId))
+                .thenReturn(Boolean.TRUE);
         when(progressRepository.findByUserIdAndAudioId(userId, audioId))
                 .thenReturn(Optional.empty());
 
@@ -150,8 +147,8 @@ class ListeningProgressServiceTest {
         Long userId = 1L;
         Long audioId = 10L;
 
-        when(audioRepository.findById(audioId))
-                .thenReturn(Optional.empty());
+        when(audioQueryService.existsById(audioId))
+                .thenReturn(false);
 
         // when + then
         assertThatThrownBy(() ->
