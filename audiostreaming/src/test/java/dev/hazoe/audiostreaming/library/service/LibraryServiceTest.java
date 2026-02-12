@@ -1,7 +1,7 @@
 package dev.hazoe.audiostreaming.library.service;
 
-import dev.hazoe.audiostreaming.audio.domain.Audio;
-import dev.hazoe.audiostreaming.audio.repository.AudioRepository;
+import dev.hazoe.audiostreaming.audio.dto.AudioListItemDto;
+import dev.hazoe.audiostreaming.audio.service.expose.AudioQueryService;
 import dev.hazoe.audiostreaming.common.exception.AudioNotFoundException;
 import dev.hazoe.audiostreaming.library.domain.LibraryItem;
 import dev.hazoe.audiostreaming.library.dto.LibraryItemDto;
@@ -14,7 +14,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
@@ -33,37 +32,41 @@ class LibraryServiceTest {
     private LibraryItemMapper libraryItemMapper;
 
     @Mock
-    private AudioRepository audioRepository;
+    private AudioQueryService audioQueryService;
 
     @Test
     void list_shouldReturnLibraryItems_whenAuthenticatedUser() {
         // given
         Long userId = 42L;
 
-        Audio audio1 = Audio.builder()
-                .id(1L)
-                .title("Mindful Focus")
-                .durationSeconds(300)
-                .isPremium(false)
-                .build();
+        AudioListItemDto audio1 = new AudioListItemDto(
+                1L,
+                "Mindful Focus",
+                300,
+                false
+                );
 
-        Audio audio2 = Audio.builder()
-                .id(2L)
-                .title("Deep Sleep")
-                .durationSeconds(600)
-                .isPremium(true)
-                .build();
+        AudioListItemDto audio2 = new AudioListItemDto(
+                1L,
+                "Deep Sleep",
+                600,
+                true
+        );
+
 
         LibraryItem item1 = LibraryItem.builder()
-                .audio(audio1)
+                .audioId(1l)
                 .build();
 
         LibraryItem item2 = LibraryItem.builder()
-                .audio(audio2)
+                .audioId(2l)
                 .build();
 
-        when(libraryItemRepository.findByUserIdWithAudio(userId))
+        when(libraryItemRepository.findByUserId(userId))
                 .thenReturn(List.of(item1, item2));
+
+        when(audioQueryService.getSummaryList(List.of(1l, 2l)))
+                .thenReturn(List.of(audio1, audio2));
 
         LibraryItemDto dto1 = new LibraryItemDto(
                 1L, "Mindful Focus", 300, false
@@ -72,8 +75,8 @@ class LibraryServiceTest {
                 2L, "Deep Sleep", 600, true
         );
 
-        when(libraryItemMapper.toDto(item1)).thenReturn(dto1);
-        when(libraryItemMapper.toDto(item2)).thenReturn(dto2);
+        when(libraryItemMapper.toDto(audio1)).thenReturn(dto1);
+        when(libraryItemMapper.toDto(audio2)).thenReturn(dto2);
 
         // when
         List<LibraryItemDto> result = libraryService.list(userId);
@@ -82,9 +85,9 @@ class LibraryServiceTest {
         assertThat(result)
                 .containsExactly(dto1, dto2);
 
-        verify(libraryItemRepository).findByUserIdWithAudio(userId);
-        verify(libraryItemMapper).toDto(item1);
-        verify(libraryItemMapper).toDto(item2);
+        verify(libraryItemRepository).findByUserId(userId);
+        verify(libraryItemMapper).toDto(audio1);
+        verify(libraryItemMapper).toDto(audio2);
         verifyNoMoreInteractions(libraryItemRepository, libraryItemMapper);
     }
 
@@ -93,7 +96,7 @@ class LibraryServiceTest {
     void list_shouldReturnEmptyList_whenUserHasNoLibraryItems() {
         // given
         Long userId = 1l;
-        when(libraryItemRepository.findByUserIdWithAudio(userId))
+        when(libraryItemRepository.findByUserId(userId))
                 .thenReturn(List.of());
 
         // when
@@ -101,7 +104,7 @@ class LibraryServiceTest {
 
         // then
         assertThat(result).isEmpty();
-        verify(libraryItemRepository).findByUserIdWithAudio(userId);
+        verify(libraryItemRepository).findByUserId(userId);
         verifyNoInteractions(libraryItemMapper);
     }
 
@@ -111,28 +114,24 @@ class LibraryServiceTest {
         Long userId = 1L;
         Long audioId = 10L;
 
-        Audio audio = Audio.builder()
-                .id(audioId)
-                .build();
+        when(audioQueryService.existsById(audioId))
+                .thenReturn(true);
 
-        when(audioRepository.findById(audioId))
-                .thenReturn(Optional.of(audio));
-
-        when(libraryItemRepository.existsByUserIdAndAudio_Id(userId, audioId))
+        when(libraryItemRepository.existsByUserIdAndAudioId(userId, audioId))
                 .thenReturn(false);
 
         // when
         libraryService.save(userId, audioId);
 
         // then
-        verify(audioRepository).findById(audioId);
+        verify(audioQueryService).existsById(audioId);
         verify(libraryItemRepository)
-                .existsByUserIdAndAudio_Id(userId, audioId);
+                .existsByUserIdAndAudioId(userId, audioId);
 
         verify(libraryItemRepository).save(
                 argThat(item ->
                         item.getUserId().equals(userId) &&
-                                item.getAudio().equals(audio)
+                                item.getAudioId().equals(audioId)
                 )
         );
     }
@@ -143,23 +142,19 @@ class LibraryServiceTest {
         Long userId = 1L;
         Long audioId = 10L;
 
-        Audio audio = Audio.builder()
-                .id(audioId)
-                .build();
+        when(audioQueryService.existsById(audioId))
+                .thenReturn(true);
 
-        when(audioRepository.findById(audioId))
-                .thenReturn(Optional.of(audio));
-
-        when(libraryItemRepository.existsByUserIdAndAudio_Id(userId, audioId))
+        when(libraryItemRepository.existsByUserIdAndAudioId(userId, audioId))
                 .thenReturn(true);
 
         // when
         libraryService.save(userId, audioId);
 
         // then
-        verify(audioRepository).findById(audioId);
+        verify(audioQueryService).existsById(audioId);
         verify(libraryItemRepository)
-                .existsByUserIdAndAudio_Id(userId, audioId);
+                .existsByUserIdAndAudioId(userId, audioId);
 
         verify(libraryItemRepository, never())
                 .save(any());
@@ -171,15 +166,15 @@ class LibraryServiceTest {
         Long userId = 1L;
         Long audioId = 99L;
 
-        when(audioRepository.findById(audioId))
-                .thenReturn(Optional.empty());
+        when(audioQueryService.existsById(audioId))
+                .thenReturn(false);
 
         // when / then
         assertThatThrownBy(() -> libraryService.save(userId, audioId))
                 .isInstanceOf(AudioNotFoundException.class)
                 .hasMessageContaining(audioId.toString());
 
-        verify(audioRepository).findById(audioId);
+        verify(audioQueryService).existsById(audioId);
         verifyNoInteractions(libraryItemRepository);
     }
 
@@ -194,7 +189,7 @@ class LibraryServiceTest {
 
         // then
         verify(libraryItemRepository)
-                .deleteByUserIdAndAudio_Id(userId, audioId);
+                .deleteByUserIdAndAudioId(userId, audioId);
         verifyNoMoreInteractions(libraryItemRepository);
     }
 

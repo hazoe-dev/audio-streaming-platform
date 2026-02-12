@@ -12,7 +12,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -41,6 +45,22 @@ public class AudioService implements AudioQueryService {
     public Optional<AudioDetailDto> getDetailsById(Long audioId) {
         return audioRepository.findById(audioId).map(audioMapper::toDetail);
     }
+
+    @Override
+    public List<AudioListItemDto> getSummaryList(List<Long> audioIds) {
+
+        List<Audio> audios = audioRepository.findAllById(audioIds); //avoid N+1 query problem
+
+        Map<Long, Audio> audioMap = audios.stream()
+                .collect(Collectors.toMap(Audio::getId, Function.identity()));
+
+        return audioIds.stream()
+                .map(id -> Optional.ofNullable(audioMap.get(id))
+                        .map(audioMapper::toListItem)
+                        .orElseThrow(() -> new AudioNotFoundException(id)))
+                .toList();
+    }
+
 
     @Override
     public Page<AudioListItemDto> search(String query, Pageable pageable) {

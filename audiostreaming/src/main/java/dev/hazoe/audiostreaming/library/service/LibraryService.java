@@ -1,7 +1,6 @@
 package dev.hazoe.audiostreaming.library.service;
 
-import dev.hazoe.audiostreaming.audio.domain.Audio;
-import dev.hazoe.audiostreaming.audio.repository.AudioRepository;
+import dev.hazoe.audiostreaming.audio.service.expose.AudioQueryService;
 import dev.hazoe.audiostreaming.common.exception.AudioNotFoundException;
 import dev.hazoe.audiostreaming.library.domain.LibraryItem;
 import dev.hazoe.audiostreaming.library.dto.LibraryItemDto;
@@ -17,29 +16,33 @@ import java.util.List;
 @RequiredArgsConstructor
 public class LibraryService {
     private final LibraryItemRepository libraryItemRepository;
-    private final AudioRepository audioRepository;
+    private final AudioQueryService audioQueryService;
     private final LibraryItemMapper libraryItemMapper;
 
     @Transactional(readOnly = true)
     public List<LibraryItemDto> list(Long userId) {
-        return libraryItemRepository.findByUserIdWithAudio(userId)
+        List<LibraryItem> items = libraryItemRepository.findByUserId(userId);
+        List<Long> audioIds = items.stream().map(LibraryItem::getAudioId).toList();
+        return audioQueryService.getSummaryList(audioIds)
                 .stream()
                 .map(this.libraryItemMapper::toDto)
                 .toList();
+
     }
 
     @Transactional
     public void save(Long userId, Long audioId) {
-        Audio audio = audioRepository.findById(audioId)
-                .orElseThrow(() -> new AudioNotFoundException(audioId));
-        if (libraryItemRepository.existsByUserIdAndAudio_Id(userId, audioId)) {
+        if (!audioQueryService.existsById(audioId)) {
+            throw new AudioNotFoundException(audioId);
+        }
+        if (libraryItemRepository.existsByUserIdAndAudioId(userId, audioId)) {
             return;
         }
-        libraryItemRepository.save(new LibraryItem(userId, audio));
+        libraryItemRepository.save(new LibraryItem(userId, audioId));
     }
 
     @Transactional
     public void delete(Long userId, Long audioId) {
-        libraryItemRepository.deleteByUserIdAndAudio_Id(userId, audioId);
+        libraryItemRepository.deleteByUserIdAndAudioId(userId, audioId);
     }
 }

@@ -23,11 +23,9 @@ create table library_item
         primary key,
     saved_at timestamp(6) with time zone,
     user_id  bigint not null,
-    audio_id bigint not null
-        constraint fkvjlr7f4yg7gt345mtokeutye
-            references audio,
-    constraint uk358l1u1y93ptvob95pda56157
-        unique (user_id, audio_id)
+    audio_id bigint not null,
+        constraint uq_library_item_user_audio
+    unique (user_id, audio_id)
 );
 
 alter table library_item
