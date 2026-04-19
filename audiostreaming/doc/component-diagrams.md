@@ -249,6 +249,8 @@ sequenceDiagram
 
 ## 7. Full-Text Search Flow
 
+### 7a. Request Pipeline
+
 ```mermaid
 sequenceDiagram
     participant C as Client
@@ -258,13 +260,55 @@ sequenceDiagram
     participant DB as PostgreSQL
 
     C->>SC: GET /api/audios/search?q=mindful focus
+
     SC->>SS: search("mindful focus", pageable)
-    SS->>SS: sanitize & build tsquery\n"mindful | focus"
-    SS->>R: findBySearchVector(tsquery, pageable)
-    R->>DB: SELECT ... WHERE search_vector @@ to_tsquery(?)\nORDER BY ts_rank DESC
-    DB-->>R: Page<Audio>
+
+    Note over SS: Step 1 — Sanitize: strip special chars to prevent tsquery syntax errors
+    Note over SS: Step 2 — Tokenize: split by whitespace → ["mindful", "focus"]
+    Note over SS: Step 3 — Prefix flag: append :* → ["mindful:*", "focus:*"]
+    Note over SS: Step 4 — OR logic: join with | → "mindful:* | focus:*"
+
+    SS->>R: search("mindful:* | focus:*", pageable)
+
+    R->>DB: SELECT * FROM audio<br/>WHERE search_vector @@ to_tsquery('english', 'mindful:* | focus:*')<br/>ORDER BY ts_rank_cd(search_vector, ...) DESC
+
+    Note over DB: Uses GIN index on search_vector — O(log N), no full table scan
+
+    DB-->>R: Page<Audio> ranked by relevance
     R-->>SS: Page<Audio>
-    SS-->>C: 200 Page<AudioListItemDto>
+    SS-->>C: 200 Page<AudioListItemDto> (most relevant first)
+```
+
+### 7b. FTS Key Benefits vs LIKE
+
+```mermaid
+graph TB
+    subgraph index["GIN Index on search_vector"]
+        I1["O(log N) lookup<br/>vs LIKE full table scan"]
+    end
+
+    subgraph pipeline["Keyword Processing Pipeline"]
+        P1["'mindful focus'"]
+        P2["sanitize — remove special chars"]
+        P3["tokenize — split by whitespace"]
+        P4["prefix :* — match partial words<br/>'mind' matches 'mindful'"]
+        P5["OR join | — any word matches<br/>'mindful:* | focus:*'"]
+        P1 --> P2 --> P3 --> P4 --> P5
+    end
+
+    subgraph fts["PostgreSQL FTS Features Used"]
+        F1["search_vector — GENERATED STORED column<br/>auto-updated on title/description change"]
+        F2["to_tsvector('english') — stemming<br/>'running' = 'run' = 'runs'"]
+        F3["@@ operator — match tsquery against tsvector"]
+        F4["ts_rank_cd() — relevance score<br/>title hit ranks higher than description hit"]
+    end
+
+    subgraph result["Result"]
+        R1["Most relevant audio appears first<br/>Partial matches included<br/>Consistent speed at any data size"]
+    end
+
+    pipeline --> fts --> result
+    index --> result
 ```
 
 ---
