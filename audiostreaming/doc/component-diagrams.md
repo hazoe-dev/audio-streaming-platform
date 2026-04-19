@@ -24,54 +24,84 @@ graph TB
 
 ## 2. Module Dependency Map
 
+### 2a. Layer Overview
+
 ```mermaid
-graph LR
+graph TB
+    subgraph Foundation["Foundation Layer"]
+        common["common<br/>SecurityConfig · JwtAuthFilter <br/>GlobalExceptionHandler · UserPrincipal"]
+    end
+
+    subgraph Feature["Feature Layer"]
+        auth["auth<br/>Register / Login / JWT"]
+        audio["audio<br/>CRUD · Stream · Mapper"]
+        search["search<br/>Full-text search"]
+        library["library<br/>User saved audios"]
+        progress["progress<br/>Listening position"]
+    end
+
+    common -->|"provides security & error handling"| auth
+    common -->|"provides security & error handling"| audio
+    common -->|"provides security & error handling"| search
+    common -->|"provides security & error handling"| library
+    common -->|"provides security & error handling"| progress
+
+    audio -->|"AudioQueryService interface"| library
+    audio -->|"AudioQueryService interface"| progress
+    audio -->|"AudioQueryService interface"| search
+```
+
+### 2b. Internal Module Detail
+
+```mermaid
+graph TB
     subgraph common["common"]
-        SC["SecurityConfig"]
-        GEH["GlobalExceptionHandler"]
-        UP["UserPrincipal"]
+        direction LR
+        SC["SecurityConfig"] --- JF["JwtAuthFilter"]
+        JF --- UP["UserPrincipal"]
+        UP --- GEH["GlobalExceptionHandler"]
     end
 
     subgraph auth["auth"]
-        AuC["AuthController"]
-        AuS["AuthService"]
-        JWT["JwtProvider"]
-        JF["JwtAuthFilter"]
-        RTS["RefreshTokenService"]
+        direction LR
+        AuC["AuthController"] --> AuS["AuthService"]
+        AuS --> JWT["JwtProvider"]
+        AuS --> RTS["RefreshTokenService"]
     end
 
     subgraph audio["audio"]
-        AdC["AudioController"]
-        AdS["AudioService"]
-        ASt["AudioStreamService"]
+        direction LR
+        AdC["AudioController"] --> AdS["AudioService"]
+        AdC --> ASt["AudioStreamService"]
+        ASt --> RR["RangeResolver"]
+        AdS --> AM["AudioMapper"]
         AA["AudioAuthorization"]
-        RR["RangeResolver"]
-        AM["AudioMapper"]
     end
 
     subgraph search["search"]
-        SeC["AudioSearchController"]
-        SeS["AudioSearchService"]
+        direction LR
+        SeC["AudioSearchController"] --> SeS["AudioSearchService"]
     end
 
     subgraph library["library"]
-        LC["LibraryController"]
-        LS["LibraryService"]
+        direction LR
+        LC["LibraryController"] --> LS["LibraryService"]
     end
 
     subgraph progress["progress"]
-        PC["ListeningProgressController"]
-        PS["ListeningProgressService"]
+        direction LR
+        PC["ListeningProgressController"] --> PS["ListeningProgressService"]
     end
 
-    common --> auth
-    common --> audio
-    common --> library
-    common --> progress
-    common --> search
-    audio -->|"AudioQueryService"| library
-    audio -->|"AudioQueryService"| progress
-    audio --> search
+    common -.->|"used by all"| auth
+    common -.->|"used by all"| audio
+    common -.->|"used by all"| search
+    common -.->|"used by all"| library
+    common -.->|"used by all"| progress
+
+    audio ===>|"AudioQueryService"| library
+    audio ===>|"AudioQueryService"| progress
+    audio ===>|"AudioQueryService"| search
 ```
 
 ---
@@ -359,15 +389,23 @@ sequenceDiagram
     participant AQS as AudioQueryService
     participant DB as PostgreSQL
 
-    C->>LC: GET /api/library\n[Authorization: Bearer token]
+    C->>LC: GET /api/library [Authorization: Bearer token]
     LC->>LS: list(userId)
-    LS->>DB: SELECT * FROM library_item WHERE user_id = ?
-    DB-->>LS: List<LibraryItem>
+
+    LS->>DB: Query 1 — SELECT * FROM library_item WHERE user_id = ?
+    DB-->>LS: List<LibraryItem> (N items)
+
+    Note over LS: Collect all audioIds from items into a List<Long>
+    Note over LS,AQS: Avoid N+1 — do NOT call findById() per item
+
     LS->>AQS: getSummaryList(audioIds)
-    AQS->>DB: SELECT * FROM audio WHERE id IN (...)
-    DB-->>AQS: List<Audio>
-    AQS-->>LS: List<AudioDetailDto>
-    LS->>LS: merge & map to LibraryItemDto
+    AQS->>DB: Query 2 — SELECT * FROM audio WHERE id IN (id1, id2, ..., idN)
+    DB-->>AQS: List<Audio> (all at once)
+
+    Note over LS,DB: Total: 2 queries regardless of N items<br/>(naive loop would cost 1 + N queries)
+
+    AQS-->>LS: List<AudioListItemDto>
+    LS->>LS: map to LibraryItemDto
     LS-->>LC: List<LibraryItemDto>
     LC-->>C: 200 [{id, title, durationSeconds, isPremium}, ...]
 ```
