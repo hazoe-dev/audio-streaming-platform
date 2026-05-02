@@ -40,15 +40,15 @@ graph TB
         progress["progress<br/>Listening position"]
     end
 
-    common -->|"provides security & error handling"| auth
-    common -->|"provides security & error handling"| audio
-    common -->|"provides security & error handling"| search
-    common -->|"provides security & error handling"| library
-    common -->|"provides security & error handling"| progress
+    auth     -->|"uses security & error handling"| common
+    audio    -->|"uses security & error handling"| common
+    search   -->|"uses security & error handling"| common
+    library  -->|"uses security & error handling"| common
+    progress -->|"uses security & error handling"| common
 
-    audio -->|"AudioQueryService interface"| library
-    audio -->|"AudioQueryService interface"| progress
-    audio -->|"AudioQueryService interface"| search
+    library  -->|"AudioQueryService interface"| audio
+    progress -->|"AudioQueryService interface"| audio
+    search   -->|"AudioQueryService interface"| audio
 ```
 
 ### 2b. Internal Module Detail
@@ -93,15 +93,15 @@ graph TB
         PC["ListeningProgressController"] --> PS["ListeningProgressService"]
     end
 
-    common -.->|"used by all"| auth
-    common -.->|"used by all"| audio
-    common -.->|"used by all"| search
-    common -.->|"used by all"| library
-    common -.->|"used by all"| progress
+    auth     -.->|"uses common"| common
+    audio    -.->|"uses common"| common
+    search   -.->|"uses common"| common
+    library  -.->|"uses common"| common
+    progress -.->|"uses common"| common
 
-    audio ===>|"AudioQueryService"| library
-    audio ===>|"AudioQueryService"| progress
-    audio ===>|"AudioQueryService"| search
+    library  ===>|"AudioQueryService"| audio
+    progress ===>|"AudioQueryService"| audio
+    search   ===>|"AudioQueryService"| audio
 ```
 
 ---
