@@ -125,7 +125,7 @@ erDiagram
         VARCHAR audio_path
         VARCHAR cover_path
         BOOLEAN is_premium
-        BIGINT owner_id FK
+        BIGINT owner_id "no FK constraint"
         TSVECTOR search_vector
         TIMESTAMPTZ created_at
     }
@@ -137,24 +137,24 @@ erDiagram
     }
     library_item {
         BIGINT id PK
-        BIGINT user_id FK
-        BIGINT audio_id FK
+        BIGINT user_id "no FK constraint"
+        BIGINT audio_id "no FK constraint"
         TIMESTAMPTZ saved_at
     }
     listening_progress {
         BIGINT id PK
-        BIGINT user_id FK
-        BIGINT audio_id FK
+        BIGINT user_id "no FK constraint"
+        BIGINT audio_id "no FK constraint"
         INTEGER position_seconds
         TIMESTAMPTZ updated_at
     }
 
-    users ||--o{ refresh_tokens : "has"
-    users ||--o{ library_item : "saves"
-    users ||--o{ listening_progress : "tracks"
-    users ||--o{ audio : "owns"
-    audio ||--o{ library_item : "in"
-    audio ||--o{ listening_progress : "tracked by"
+    users ||--o{ refresh_tokens : "has (FK enforced)"
+    users ||..o{ library_item : "saves (logical only)"
+    users ||..o{ listening_progress : "tracks (logical only)"
+    users ||..o{ audio : "owns (logical only)"
+    audio ||..o{ library_item : "in (logical only)"
+    audio ||..o{ listening_progress : "tracked by (logical only)"
 ```
 
 ---
