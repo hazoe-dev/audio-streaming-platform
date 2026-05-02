@@ -137,8 +137,8 @@ erDiagram
     }
     library_item {
         BIGINT id PK
-        BIGINT user_id "no FK constraint"
-        BIGINT audio_id "no FK constraint"
+        BIGINT user_id "no FK · uq(user_id, audio_id)"
+        BIGINT audio_id "no FK · uq(user_id, audio_id)"
         TIMESTAMPTZ saved_at
     }
     listening_progress {
