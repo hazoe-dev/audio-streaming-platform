@@ -181,9 +181,11 @@ sequenceDiagram
     AC->>AS: authenticate(LoginRequest)
     AS->>DB: SELECT user WHERE email = ?
     AS->>JP: generateAccessToken(userId, role)
-    AS->>JP: generateRefreshToken(userId)
     AS->>RTS: rotate(user)
-    RTS->>DB: DELETE old tokens, INSERT new refresh_token
+    RTS->>DB: DELETE old tokens
+    RTS->>JP: generateRefreshToken(userId)
+    RTS->>DB: INSERT new refresh_token
+    RTS-->>AS: refreshToken
     AS-->>C: 200 {accessToken, refreshToken}
 
     Note over C,DB: Token Refresh
@@ -191,7 +193,13 @@ sequenceDiagram
     AC->>AS: refreshToken(request)
     AS->>RTS: validate(token)
     RTS->>DB: SELECT refresh_tokens WHERE token = ?
+    RTS-->>AS: stored RefreshToken (with User)
+    AS->>JP: generateAccessToken(userId, role)
     AS->>RTS: rotate(user)
+    RTS->>DB: DELETE old tokens
+    RTS->>JP: generateRefreshToken(userId)
+    RTS->>DB: INSERT new refresh_token
+    RTS-->>AS: newRefreshToken
     AS-->>C: 200 {newAccessToken, newRefreshToken}
 ```
 
